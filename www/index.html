@@ -3463,6 +3463,10 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
       if (window.speechSynthesis) {
         try { window.speechSynthesis.cancel(); } catch (e) {}
       }
+      const nativeAssistant = window.Capacitor?.Plugins?.NativeAssistant;
+      if (nativeAssistant?.stopSpeech) {
+        nativeAssistant.stopSpeech().catch(() => {});
+      }
       waveformMode.textContent = "STANDBY";
       const badge = document.getElementById('tts-wave-badge');
       if (badge) {
@@ -3508,14 +3512,32 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
         coreActionText.innerHTML = 'Currently power level is at <strong class="text-white">100</strong> percent and holding steady.';
       };
 
-      // Use Android SpeechSynthesis only. The previous custom AudioContext
-      // synthesizer played simultaneously and made the voice difficult to understand.
-      const estMs = Math.max(2200, clean.split(/\s+/).length * 400);
+      // Prefer Android's native TextToSpeech engine inside the installed APK.
+      // Browser SpeechSynthesis remains a fallback for ordinary browser sessions.
+      const estMs = Math.max(2600, clean.split(/\s+/).length * 430);
+      const nativeAssistant = window.Capacitor?.Plugins?.NativeAssistant;
 
-      if (window.speechSynthesis) {
+      if (nativeAssistant?.speak) {
+        nativeAssistant.speak({ text: clean }).catch((err) => {
+          console.error('Native TextToSpeech failed:', err);
+          if (window.speechSynthesis && typeof SpeechSynthesisUtterance !== 'undefined') {
+            try {
+              window.speechSynthesis.cancel();
+              const utterance = new SpeechSynthesisUtterance(clean);
+              utterance.lang = 'en-IN';
+              utterance.rate = 0.92;
+              utterance.volume = 1;
+              utterance.onend = finishSpeech;
+              utterance.onerror = finishSpeech;
+              window.speechSynthesis.speak(utterance);
+            } catch (fallbackError) { finishSpeech(); }
+          } else {
+            finishSpeech();
+          }
+        });
+      } else if (window.speechSynthesis && typeof SpeechSynthesisUtterance !== 'undefined') {
         try {
           window.speechSynthesis.cancel();
-          window.speechSynthesis.resume();
           const utterance = new SpeechSynthesisUtterance(clean);
           const v = cachedJarvisVoice || selectBestJarvisVoice();
           if (v) utterance.voice = v;
@@ -3526,9 +3548,7 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
           utterance.onend = finishSpeech;
           utterance.onerror = finishSpeech;
           window.speechSynthesis.speak(utterance);
-        } catch (e) {
-          finishSpeech();
-        }
+        } catch (e) { finishSpeech(); }
       } else {
         finishSpeech();
       }
@@ -6387,6 +6407,16 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
       showToast(msg);
     }
 
+    function getAndroidPackageName(appName) {
+      const name = String(appName || '').toLowerCase();
+      if (name.includes('whatsapp')) return 'com.whatsapp';
+      if (name.includes('youtube')) return 'com.google.android.youtube';
+      if (name.includes('instagram')) return 'com.instagram.android';
+      if (name.includes('chrome')) return 'com.android.chrome';
+      if (name.includes('spotify')) return 'com.spotify.music';
+      return null;
+    }
+
     function buildAndroidIntentUri(appName, webUrl, nativeUri) {
       const lower = appName.toLowerCase();
       const cleanPath = webUrl.replace(/^https?:\/\//i, '');
@@ -6436,7 +6466,24 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
       if (banner && titleEl && descEl && linkEl) {
         titleEl.textContent = `🚀 EXTERNAL ${appName.toUpperCase()} READY`;
         descEl.textContent = `${description}`;
-        linkEl.href = webUrl;
+        linkEl.href = isAndroid ? '#launch-native-app' : webUrl;
+        linkEl.onclick = (event) => {
+          if (isAndroid) {
+            event.preventDefault();
+            const nativeAssistant = window.Capacitor?.Plugins?.NativeAssistant;
+            const packageName = getAndroidPackageName(appName);
+            if (nativeAssistant?.launchApp && packageName) {
+              nativeAssistant.launchApp({ packageName }).then(() => {
+                setOmniFeedback(appName + ' launch request sent to Android.');
+              }).catch((err) => {
+                console.error('Native app launch failed:', err);
+                setOmniFeedback(appName + ' could not be opened. Check that it is installed.');
+              });
+            } else {
+              setOmniFeedback('Native Android launcher is unavailable. Install the latest J.A.R.V.I.S. APK.');
+            }
+          }
+        };
         linkEl.textContent = `OPEN ${appName.toUpperCase()} ↗`;
         if (nativeEl) {
           nativeEl.href = intentUri;
@@ -6445,14 +6492,24 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
         banner.classList.add('flex');
       }
 
-      // Launch Android package-targeted intent first; do not open web fallback first.
-      try {
-        if (isAndroid) {
-          window.location.href = intentUri;
+      // Launch through Android PackageManager in the Capacitor APK.
+      // Do not send Android users to Chrome when a native launch fails.
+      if (isAndroid) {
+        const nativeAssistant = window.Capacitor?.Plugins?.NativeAssistant;
+        const packageName = getAndroidPackageName(appName);
+        if (nativeAssistant?.launchApp && packageName) {
+          nativeAssistant.launchApp({ packageName }).then(() => {
+            setOmniFeedback(appName + ' launch request sent to Android.');
+          }).catch((err) => {
+            console.error('Native app launch failed:', err);
+            setOmniFeedback(appName + ' could not be opened. Check that it is installed.');
+          });
         } else {
-          window.open(webUrl, '_blank', 'noopener,noreferrer');
+          setOmniFeedback('Native Android launcher is unavailable. Install the latest J.A.R.V.I.S. APK.');
         }
-      } catch (e) {}
+      } else {
+        window.open(webUrl, '_blank', 'noopener,noreferrer');
+      }
     }
 
     // Pure External Link & Share Handlers (Zero Internal Fake Screens!)

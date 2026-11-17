@@ -26,6 +26,10 @@ jobs:
         run: npx cap add android
       - name: Apply Android manifest
         run: cp android-template/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
+      - name: Install native JARVIS Android bridge
+        run: |
+          mkdir -p android/app/src/main/java/com/stark/jarvis/os
+          cp android-template/src/main/java/com/stark/jarvis/os/*.java android/app/src/main/java/com/stark/jarvis/os/
       - name: Sync Capacitor project
         run: npx cap sync android
       - name: Build debug APK
