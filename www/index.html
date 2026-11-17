@@ -3508,19 +3508,10 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
         coreActionText.innerHTML = 'Currently power level is at <strong class="text-white">100</strong> percent and holding steady.';
       };
 
-      // 1. Play full continuous multi-second speech directly through `audioCtx.destination`
-      //    (Same unlocked Web Audio channel as the button click sound, so it NEVER stops after a short clip!)
-      const estMs = playContinuousAudioContextSpeech(clean, finishSpeech) || 3000;
+      // Use Android SpeechSynthesis only. The previous custom AudioContext
+      // synthesizer played simultaneously and made the voice difficult to understand.
+      const estMs = Math.max(2200, clean.split(/\s+/).length * 400);
 
-      // 2. Update the visible <audio controls> bar with the WAV Data URI
-      try {
-        const domAudio = document.getElementById('jarvis-master-audio');
-        if (domAudio) {
-          domAudio.src = buildSyllableWavDataUri(clean);
-        }
-      } catch (e) {}
-
-      // 3. Also fire Native OS SpeechSynthesis when supported
       if (window.speechSynthesis) {
         try {
           window.speechSynthesis.cancel();
@@ -3528,12 +3519,18 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
           const utterance = new SpeechSynthesisUtterance(clean);
           const v = cachedJarvisVoice || selectBestJarvisVoice();
           if (v) utterance.voice = v;
-          utterance.lang = (v && v.lang) ? v.lang : 'en-GB';
-          utterance.rate = 1.03;
-          utterance.pitch = 0.92;
+          utterance.lang = (v && v.lang) ? v.lang : 'en-IN';
+          utterance.rate = 0.92;
+          utterance.pitch = 1.0;
           utterance.volume = 1.0;
+          utterance.onend = finishSpeech;
+          utterance.onerror = finishSpeech;
           window.speechSynthesis.speak(utterance);
-        } catch (e) {}
+        } catch (e) {
+          finishSpeech();
+        }
+      } else {
+        finishSpeech();
       }
 
       // Live Karaoke Word-by-Word Subtitle Stream
@@ -4010,11 +4007,20 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
       }
 
       // 3. REAL EXTERNAL APP & OS URI DISPATCHERS (Opens Actual External App, Not Inbuilt Clones!)
+      if (lower.includes('instagram')) {
+        state.isProcessing = false;
+        const reply = 'Opening Instagram on your phone.';
+        const url = 'https://www.instagram.com/';
+        dispatchRealExternalApp('Instagram', url, 'instagram://app', reply);
+        appendMessage('J.A.R.V.I.S.', reply, { source: 'EXTERNAL INSTAGRAM APP', url });
+        speakText(reply);
+        return;
+      }
       if (lower.includes('whatsapp')) {
         state.isProcessing = false;
         const parsedWa = parseWhatsAppCommand(q);
         dispatchRealExternalApp('WhatsApp', parsedWa.webUrl, parsedWa.nativeUri, parsedWa.description);
-                appendMessage('J.A.R.V.I.S.', parsedWa.spokenReply, { source: 'WHATSAPP LIVE AUTOMATION', url: parsedWa.webUrl });
+        appendMessage('J.A.R.V.I.S.', parsedWa.spokenReply, { source: 'WHATSAPP LIVE AUTOMATION', url: parsedWa.webUrl });
         speakText(parsedWa.spokenReply);
         return;
       }
@@ -6194,9 +6200,9 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
         .replace(/^(say\s+an?\s+example\s+message|say\s+message|send\s+message|message|say|send|that|to)\s*/i, '')
         .trim();
 
-      const nativeUri = messageBody
+      const nativeUri = (messageBody || phoneDigits)
         ? `whatsapp://send?phone=${phoneDigits}&text=${encodeURIComponent(messageBody)}`
-        : `whatsapp://send?phone=${phoneDigits}`;
+        : 'whatsapp://';
       const webUrl = phoneDigits ? `https://wa.me/${phoneDigits}${messageBody ? '?text=' + encodeURIComponent(messageBody) : ''}` : (messageBody ? `https://wa.me/?text=${encodeURIComponent(messageBody)}` : `https://web.whatsapp.com/`);
 
       const desc = messageBody
@@ -6388,11 +6394,14 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
         return `intent://${cleanPath}#Intent;scheme=https;package=com.google.android.youtube;S.browser_fallback_url=${encodeURIComponent(webUrl)};end`;
       }
       if (lower.includes('whatsapp')) {
-        if (nativeUri && nativeUri.startsWith('whatsapp://')) {
-          const pathPart = nativeUri.replace(/^whatsapp:\/\//i, '');
-          return `intent://${pathPart}#Intent;scheme=whatsapp;package=com.whatsapp;S.browser_fallback_url=${encodeURIComponent(webUrl)};end`;
+        if (!nativeUri || nativeUri === 'whatsapp://') {
+          return 'intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=com.whatsapp;end';
         }
-        return `intent://${cleanPath}#Intent;scheme=https;package=com.whatsapp;S.browser_fallback_url=${encodeURIComponent(webUrl)};end`;
+        const pathPart = nativeUri.replace(/^whatsapp:\/\//i, '');
+        return `intent://${pathPart}#Intent;scheme=whatsapp;package=com.whatsapp;S.browser_fallback_url=${encodeURIComponent(webUrl)};end`;
+      }
+      if (lower.includes('instagram')) {
+        return `intent://instagram.com/#Intent;scheme=https;package=com.instagram.android;S.browser_fallback_url=${encodeURIComponent(webUrl)};end`;
       }
       if (lower.includes('chrome') || lower.includes('google')) {
         return `intent://${cleanPath}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(webUrl)};end`;
@@ -6436,11 +6445,12 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
         banner.classList.add('flex');
       }
 
-      // 2. Immediately attempt external browser / native app launch (No internal clone window!)
+      // Launch Android package-targeted intent first; do not open web fallback first.
       try {
-        const winRef = window.open(webUrl, '_blank', 'noopener,noreferrer');
-        if (!winRef && isAndroid) {
+        if (isAndroid) {
           window.location.href = intentUri;
+        } else {
+          window.open(webUrl, '_blank', 'noopener,noreferrer');
         }
       } catch (e) {}
     }
