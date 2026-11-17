@@ -1,0 +1,27 @@
+{
+  "name": "jarvis-mark7-tactical-os",
+  "version": "2.0.0",
+  "description": "J.A.R.V.I.S. Mark VII Tactical AI Assistant & HUD OS (Capacitor Android Edition)",
+  "main": "www/index.html",
+  "scripts": {
+    "cap:init": "npx cap init \"J.A.R.V.I.S. OS\" com.stark.jarvis.os --web-dir www",
+    "cap:add:android": "npx cap add android",
+    "cap:sync": "npx cap sync android",
+    "cap:open": "npx cap open android",
+    "build:apk": "npx cap sync android && cd android && ./gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.1.0",
+    "@capacitor/app": "^6.0.0",
+    "@capacitor/core": "^6.1.0",
+    "@capacitor/geolocation": "^6.0.0",
+    "@capacitor/haptics": "^6.0.0",
+    "@capacitor/local-notifications": "^6.0.0",
+    "@capacitor/share": "^6.0.0",
+    "@capacitor/splash-screen": "^6.0.0",
+    "@capacitor/status-bar": "^6.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.1.0"
+  }
+}

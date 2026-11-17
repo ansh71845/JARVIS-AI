@@ -1,0 +1,25 @@
+{
+  "appId": "com.stark.jarvis.os",
+  "appName": "J.A.R.V.I.S.",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "backgroundColor": "#030710",
+  "android": {
+    "allowMixedContent": true,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": true
+  },
+  "plugins": {
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#030710",
+      "overlaysWebView": false
+    },
+    "SplashScreen": {
+      "launchShowDuration": 1200,
+      "backgroundColor": "#030710",
+      "showSpinner": true,
+      "spinnerColor": "#00e5ff"
+    }
+  }
+}
