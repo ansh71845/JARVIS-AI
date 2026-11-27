@@ -1500,7 +1500,7 @@
               <span class="text-amber-400 font-display-hud">💻 STARK LIVE JS CODE SANDBOX</span>
               <button type="button" id="run-code-btn" class="px-3 py-0.5 bg-amber-500 hover:bg-cyan-400 text-black font-display-hud font-bold text-[10px]">▶ EXECUTE CODE</button>
             </div>
-            <textarea id="sandbox-code-input" rows="5" class="w-full p-2 bg-slate-950 border border-cyan-500/40 text-emerald-300 font-mono-hud text-xs focus:outline-none">// Write live JS to compute telemetry or control JARVIS:
+            <textarea id="sandbox-code-input" rows="5" class="w-full p-2 bg-slate-950 border border-cyan-500/40 text-emerald-300 font-mono-hud text-xs focus:outline-none">// Write JavaScript to compute values in an isolated sandbox (no app controls):
 const thrust = [120, 340, 580].reduce((a, b) => a + b, 0);
 return `Total Repulsor Thrust: ${thrust} kN | Location: ${state.location.city}`;</textarea>
             <div id="sandbox-code-output" class="p-2 bg-slate-950 border border-emerald-500/40 text-cyan-200 text-xs">
@@ -5886,21 +5886,69 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
     const runCodeBtn = document.getElementById('run-code-btn');
     if (runCodeBtn) {
       runCodeBtn.addEventListener('click', () => {
-        const code = document.getElementById('sandbox-code-input').value;
+        const codeInput = document.getElementById('sandbox-code-input');
         const outBox = document.getElementById('sandbox-code-output');
+        const code = codeInput?.value || '';
+        if (!outBox || !code.trim()) {
+          if (outBox) outBox.textContent = 'Enter JavaScript code before running.';
+          return;
+        }
+
+        // Run user code in a disposable Worker, never in the application page.
+        // Only a minimal, non-secret context is passed into the sandbox.
+        const workerSource = `
+          self.onmessage = async ({ data }) => {
+            try {
+              const run = new Function('state', data.code);
+              const result = await run(data.state);
+              let output;
+              if (typeof result === 'string') output = result;
+              else if (result === undefined) output = 'Executed successfully (undefined return).';
+              else {
+                try { output = JSON.stringify(result); }
+                catch (_) { output = String(result); }
+              }
+              self.postMessage({ ok: true, output: String(output) });
+            } catch (error) {
+              self.postMessage({ ok: false, error: error?.message || 'Execution failed.' });
+            }
+          };
+        `;
+
+        let workerUrl;
+        let worker;
+        let finished = false;
+        const finish = (message) => {
+          if (finished) return;
+          finished = true;
+          clearTimeout(timeoutId);
+          if (worker) worker.terminate();
+          if (workerUrl) URL.revokeObjectURL(workerUrl);
+          outBox.textContent = message;
+        };
+
         try {
-          const fn = new Function('state', 'speakText', 'triggerBgShockwave', code);
-          const result = fn(state, speakText, triggerBgShockwave);
-          playHudSound('confirm');
-          const resStr = result !== undefined ? String(result) : 'Executed successfully (undefined return).';
-          if (outBox) outBox.textContent = `OUTPUT: ${resStr}`;
-          speakText(resStr);
-        } catch (err) {
-          if (outBox) outBox.textContent = `RUNTIME ERROR: ${err.message}`;
+          workerUrl = URL.createObjectURL(new Blob([workerSource], { type: 'text/javascript' }));
+          worker = new Worker(workerUrl);
+          const timeoutId = setTimeout(() => finish('Execution stopped: time limit exceeded (2 seconds).'), 2000);
+          worker.onmessage = (event) => {
+            if (event.data?.ok) {
+              finish(`OUTPUT: ${event.data.output}`);
+              playHudSound('confirm');
+            } else {
+              finish(`RUNTIME ERROR: ${event.data?.error || 'Unknown error.'}`);
+            }
+          };
+          worker.onerror = () => finish('RUNTIME ERROR: sandbox worker failed.');
+          worker.postMessage({
+            code,
+            state: { location: { city: state?.location?.city || 'Unknown' } }
+          });
+        } catch (error) {
+          finish(`SANDBOX ERROR: ${error?.message || 'Unable to start isolated worker.'}`);
         }
       });
     }
-
 
     // =========================================================================
     // STEP 10: POWER OFF / SWITCH ON / REBOOT, PHONE CALLING & ENJOYING ZONE
