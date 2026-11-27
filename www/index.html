@@ -1543,7 +1543,7 @@ return `Total Repulsor Thrust: ${thrust} kN | Location: ${state.location.city}`;
             </div>
             <div class="grid grid-cols-3 gap-2 pt-1">
               <button type="button" id="start-call-btn" class="col-span-2 py-2 bg-emerald-500 hover:bg-emerald-400 text-black font-display-hud font-bold text-xs">📞 INITIATE CALL</button>
-              <button type="button" id="end-call-btn" class="py-2 bg-rose-600 hover:bg-rose-500 text-white font-display-hud font-bold text-xs">✖ END CALL</button>
+              <button type="button" id="end-call-btn" class="py-2 bg-rose-600 hover:bg-rose-500 text-white font-display-hud font-bold text-xs">✖ CLOSE PANEL</button>
             </div>
           </div>
 
@@ -5987,40 +5987,39 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
     function startJarvisPhoneCall(targetName, explicitNum = '') {
       openHubModal('phone');
       const name = targetName || (phoneInput && phoneInput.value.trim()) || 'Number';
-      const num = explicitNum || (phoneInput && phoneInput.value.trim()) || '';
-      if (phoneInput) phoneInput.value = num;
-      if (realTelLink) realTelLink.href = `tel:${num.replace(/\s+/g, '')}`;
+      const rawNumber = explicitNum || (phoneInput && phoneInput.value.trim()) || '';
+      const dialNumber = rawNumber.replace(/[^0-9+*#]/g, '');
+      if (phoneInput) phoneInput.value = rawNumber;
 
-      if (callInterval) clearInterval(callInterval);
-      if (ringTimer) clearTimeout(ringTimer);
+      if (callInterval) { clearInterval(callInterval); callInterval = null; }
+      if (ringTimer) { clearTimeout(ringTimer); ringTimer = null; }
+      callSecs = 0;
+      if (callTimerEl) callTimerEl.textContent = '00:00';
 
-      if (callerNameEl) callerNameEl.textContent = `📲 DIALING ${name.toUpperCase()}...`;
-      if (callBadgeEl) callBadgeEl.textContent = "RINGING...";
-      if (callTranscriptEl) callTranscriptEl.textContent = `Establishing encrypted satellite voice channel to ${name} (${num})...`;
-      playHudSound('pulse');
+      if (!/^\\+?\\d{3,15}$/.test(dialNumber)) {
+        if (callerNameEl) callerNameEl.textContent = 'NUMBER REQUIRED';
+        if (callBadgeEl) callBadgeEl.textContent = 'NOT STARTED';
+        if (callTranscriptEl) callTranscriptEl.textContent = 'Enter a valid phone number or select a saved contact. J.A.R.V.I.S. cannot connect or simulate a live call.';
+        showToast('Enter a valid phone number');
+        return;
+      }
 
-      ringTimer = setTimeout(() => {
-        callSecs = 0;
-        if (callerNameEl) callerNameEl.textContent = `🟢 CONNECTED: ${name.toUpperCase()}`;
-        if (callBadgeEl) callBadgeEl.textContent = "VOICE LINK ACTIVE";
-        let lineResponse = `Voice link connected with ${name}. Audio clarity is 100 percent. Go ahead, Commander.`;
-        if (name.toLowerCase().includes('mom')) {
-          lineResponse = `Connected with Mom. "Hello dear! Jarvis just patched your call through—everything is wonderful here!"`;
-        } else if (name.toLowerCase().includes('pepper')) {
-          lineResponse = `Connected with Pepper Potts. "Tony, I've reviewed the Stark Industries quarterly projections—all metrics are green."`;
-        } else if (name.toLowerCase().includes('rhodey')) {
-          lineResponse = `Connected with Colonel Rhodes. "War Machine telemetry is locked on your wing, Tony. Ready when you are."`;
+      if (realTelLink) {
+        realTelLink.href = `tel:${dialNumber}`;
+        if (callerNameEl) callerNameEl.textContent = `📲 OPENING DIALER: ${name.toUpperCase()}`;
+        if (callBadgeEl) callBadgeEl.textContent = 'HANDOFF REQUESTED';
+        if (callTranscriptEl) callTranscriptEl.textContent = `Handing ${dialNumber} to your device Phone app. Review the number and confirm the call there.`;
+        try {
+          realTelLink.click();
+          showToast('Opening device phone dialer');
+        } catch (error) {
+          showToast('Tap DIAL ON REAL PHONE to continue');
         }
-        if (callTranscriptEl) callTranscriptEl.textContent = lineResponse;
-        speakText(lineResponse);
-
-        callInterval = setInterval(() => {
-          callSecs++;
-          const m = String(Math.floor(callSecs / 60)).padStart(2, '0');
-          const s = String(callSecs % 60).padStart(2, '0');
-          if (callTimerEl) callTimerEl.textContent = `${m}:${s}`;
-        }, 1000);
-      }, 1300);
+      } else {
+        if (callBadgeEl) callBadgeEl.textContent = 'DIALER UNAVAILABLE';
+        if (callTranscriptEl) callTranscriptEl.textContent = 'This browser cannot hand off a phone call. Use a device with a configured Phone app.';
+        showToast('Phone dialer unavailable');
+      }
     }
 
     function endJarvisPhoneCall() {
@@ -6031,7 +6030,7 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
       if (callerNameEl) callerNameEl.textContent = "CALL TERMINATED";
       if (callBadgeEl) callBadgeEl.textContent = "LINE READY";
       if (callTimerEl) callTimerEl.textContent = "00:00";
-      if (callTranscriptEl) callTranscriptEl.textContent = "Satellite voice uplink closed cleanly.";
+      if (callTranscriptEl) callTranscriptEl.textContent = "J.A.R.V.I.S. panel closed. Active calls must be ended in the Android Phone app.";
       showToast("Call Ended");
     }
 
