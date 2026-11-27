@@ -2,7 +2,7 @@ name: Build J.A.R.V.I.S. Android APK
 
 on:
   push:
-    branches: [main]
+    branches: [main, audit/jarvis-mark-vii-hardening]
   workflow_dispatch:
 
 permissions:
