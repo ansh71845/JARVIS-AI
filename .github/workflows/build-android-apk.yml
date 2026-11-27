@@ -30,6 +30,35 @@ jobs:
         run: |
           mkdir -p android/app/src/main/java/com/stark/jarvis/os
           cp android-template/src/main/java/com/stark/jarvis/os/*.java android/app/src/main/java/com/stark/jarvis/os/
+      - name: Validate embedded JavaScript and HTML IDs
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const os = require('node:os');
+          const path = require('node:path');
+          const { spawnSync } = require('node:child_process');
+          const html = fs.readFileSync('www/index.html', 'utf8');
+          const scripts = [...html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script>/gi)]
+            .filter(([, attrs, body]) => !/\\bsrc\\s*=/.test(attrs) && body.trim());
+          if (scripts.length === 0) throw new Error('No inline JavaScript found to validate.');
+          for (let i = 0; i < scripts.length; i++) {
+            const file = path.join(os.tmpdir(), `jarvis-inline-${i}.js`);
+            fs.writeFileSync(file, scripts[i][2]);
+            const check = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8' });
+            if (check.status !== 0) {
+              process.stderr.write(check.stderr || check.stdout);
+              process.exit(check.status || 1);
+            }
+          }
+          const ids = [...html.matchAll(/\\bid=["']([^"']+)["']/g)]
+            .map(([, id]) => id)
+            .filter(id => !/[\\$\\{]/.test(id));
+          const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
+          if (duplicates.length) {
+            throw new Error('Duplicate static HTML IDs: ' + [...new Set(duplicates)].join(', '));
+          }
+          console.log(`Validated ${scripts.length} inline scripts and ${ids.length} static IDs.`);
+          NODE
       - name: Sync Capacitor project
         run: npx cap sync android
       - name: Build debug APK
