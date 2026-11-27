@@ -38,8 +38,8 @@ jobs:
           const path = require('node:path');
           const { spawnSync } = require('node:child_process');
           const html = fs.readFileSync('www/index.html', 'utf8');
-          const scripts = [...html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script>/gi)]
-            .filter(([, attrs, body]) => !/\\bsrc\\s*=/.test(attrs) && body.trim());
+          const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
+            .filter(([, attrs, body]) => !/\bsrc\s*=/.test(attrs) && body.trim());
           if (scripts.length === 0) throw new Error('No inline JavaScript found to validate.');
           for (let i = 0; i < scripts.length; i++) {
             const file = path.join(os.tmpdir(), `jarvis-inline-${i}.js`);
@@ -50,9 +50,9 @@ jobs:
               process.exit(check.status || 1);
             }
           }
-          const ids = [...html.matchAll(/\\bid=["']([^"']+)["']/g)]
+          const ids = [...html.matchAll(/\bid=["']([^"']+)["']/g)]
             .map(([, id]) => id)
-            .filter(id => !/[\\$\\{]/.test(id));
+            .filter(id => !/[\$\{]/.test(id));
           const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
           if (duplicates.length) {
             throw new Error('Duplicate static HTML IDs: ' + [...new Set(duplicates)].join(', '));
