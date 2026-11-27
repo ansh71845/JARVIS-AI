@@ -1662,7 +1662,7 @@ return `Total Repulsor Thrust: ${thrust} kN | Location: ${state.location.city}`;
                 <span>LIVE INTERACTIVE WEBSITE PREVIEW</span>
                 <span id="webdev-status-badge" class="text-emerald-400">RENDERED 60FPS</span>
               </div>
-              <iframe id="webdev-preview-iframe" class="w-full h-60 bg-slate-950 border border-cyan-400/50 rounded"></iframe>
+              <iframe id="webdev-preview-iframe" title="Isolated website preview" sandbox="allow-scripts" referrerpolicy="no-referrer" loading="lazy" class="w-full h-60 bg-slate-950 border border-cyan-400/50 rounded"></iframe>
             </div>
           </div>
         </div>
@@ -6715,6 +6715,7 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
 
     function generateAiWebsiteInStudio(promptText) {
       const p = promptText.trim() || 'Futuristic AI App';
+      const safePrompt = p.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
       const statusBadge = document.getElementById('webdev-status-badge');
       if (statusBadge) statusBadge.textContent = 'GENERATING CODE...';
 
@@ -6729,8 +6730,8 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
       <span class="text-xs font-mono text-amber-400">PROMPT-BASED TEMPLATE DEMO</span>
       <span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 text-[10px] rounded">LIVE</span>
     </div>
-    <h1 class="text-xl font-extrabold text-white uppercase tracking-wide">${p}</h1>
-    <p class="text-xs text-slate-300 leading-relaxed">Demo template generated locally by J.A.R.V.I.S. for "${p}".</p>
+    <h1 class="text-xl font-extrabold text-white uppercase tracking-wide">${safePrompt}</h1>
+    <p class="text-xs text-slate-300 leading-relaxed">Demo template generated locally by J.A.R.V.I.S. for "${safePrompt}".</p>
     <div class="flex space-x-2 pt-2">
       <button onclick="this.textContent='✔ FEATURE ACTIVE'" class="px-4 py-2 bg-cyan-400 hover:bg-amber-400 text-black font-bold text-xs rounded transition">⚡ LAUNCH FEATURE</button>
     </div>
@@ -7177,7 +7178,7 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
       }
       if (bioStatus) bioStatus.textContent = 'LOCKED // DEMO MODE';
       if (bioReadout) bioReadout.innerHTML = 'Demo only: this visual lock does not verify identity. No PIN or biometric authentication is configured.';
-      speakText("Biometric security lock engaged. Retinal or voiceprint verification required.");
+      speakText("Visual demo lock engaged. This does not authenticate identity.");
     }
 
     function runBiometricUnlockScan() {
