@@ -378,7 +378,7 @@
   </div>
 
   <!-- ===================================================================== -->
-  <!-- BIOMETRIC RETINAL & VOICEPRINT SECURITY LOCK OVERLAY (STEP 18)        -->
+  <!-- VISUAL DEMO LOCK OVERLAY (STEP 18)        -->
   <!-- ===================================================================== -->
   <div id="biometric-lock-overlay" class="fixed inset-0 z-[950] bg-[#02050b]/96 hidden flex-col items-center justify-center p-6 text-center font-mono-hud">
     <div class="cad-frame max-w-md w-full p-6 border-2 border-cyan-400 bg-black/95 space-y-4 shadow-[0_0_50px_rgba(0,229,255,0.3)]">
@@ -394,13 +394,6 @@
           Demo only: this visual lock does not verify identity. No PIN or biometric authentication is configured.
         </div>
       </div>
-
-      <form id="bio-pin-form" class="flex items-center space-x-2">
-        <input type="password" id="bio-pin-input" placeholder="Enter Security PIN (Default: 3000)..." class="flex-1 px-3 py-2 bg-slate-950 border border-cyan-500/50 rounded text-center text-sm text-cyan-200 focus:outline-none">
-        <button type="submit" class="px-4 py-2 bg-cyan-400 hover:bg-amber-400 text-black font-display-hud font-bold text-xs rounded uppercase transition">
-          UNLOCK
-        </button>
-      </form>
 
       <button type="button" id="bio-quick-scan-btn" class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-black font-display-hud font-bold text-xs rounded uppercase tracking-wider transition shadow">
         ▶ RUN VISUAL SCAN DEMO
@@ -7142,7 +7135,7 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
       if (bioScanning) return;
       bioScanning = true;
       playHudSound('chirp');
-      if (bioStatus) bioStatus.textContent = 'SCANNING RETINA...';
+      if (bioStatus) bioStatus.textContent = 'SIMULATING VISUAL SCAN...';
       if (bioReadout) bioReadout.textContent = 'Running visual animation only — no biometric sensor is being read.';
 
       const scanInterval = setInterval(() => {
