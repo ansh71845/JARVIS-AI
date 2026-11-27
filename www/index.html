@@ -383,15 +383,15 @@
   <div id="biometric-lock-overlay" class="fixed inset-0 z-[950] bg-[#02050b]/96 hidden flex-col items-center justify-center p-6 text-center font-mono-hud">
     <div class="cad-frame max-w-md w-full p-6 border-2 border-cyan-400 bg-black/95 space-y-4 shadow-[0_0_50px_rgba(0,229,255,0.3)]">
       <div class="flex items-center justify-between border-b border-cyan-500/30 pb-2 text-xs">
-        <span class="font-display-hud text-rose-400 font-bold tracking-widest">🛡️ S.H.I.E.L.D. BIOMETRIC LOCK ENGAGED</span>
-        <span id="bio-lock-status" class="text-amber-400 text-[10px]">AUTH REQUIRED</span>
+        <span class="font-display-hud text-rose-400 font-bold tracking-widest">🛡️ DEMO LOCK — NOT REAL AUTHENTICATION</span>
+        <span id="bio-lock-status" class="text-amber-400 text-[10px]">DEMO MODE</span>
       </div>
 
       <!-- Animated Retinal / Fingerprint Biometric Scanner Canvas -->
       <div class="flex flex-col items-center">
         <canvas id="biometricCanvas" width="180" height="180" class="w-40 h-40 cursor-pointer" title="Tap Scanner to Run Biometric Retinal & Voice Verification"></canvas>
         <div id="bio-scan-readout" class="text-xs text-cyan-300 mt-2">
-          Tap Retinal Scanner, enter PIN (<code class="text-amber-300">3000</code>), or click <strong>🔓 SCAN BIOMETRICS</strong>
+          Demo only: this visual lock does not verify identity. No PIN or biometric authentication is configured.
         </div>
       </div>
 
@@ -403,7 +403,7 @@
       </form>
 
       <button type="button" id="bio-quick-scan-btn" class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-black font-display-hud font-bold text-xs rounded uppercase tracking-wider transition shadow">
-        🔓 SCAN RETINAL &amp; VOICEPRINT TO UNLOCK
+        ▶ RUN VISUAL SCAN DEMO
       </button>
     </div>
   </div>
@@ -6684,11 +6684,11 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
 <body class="bg-[#04070f] text-cyan-100 font-sans p-6">
   <div class="max-w-xl mx-auto border border-cyan-400/50 rounded-xl p-5 bg-slate-900/90 space-y-3 shadow-xl">
     <div class="flex justify-between items-center border-b border-cyan-500/30 pb-2">
-      <span class="text-xs font-mono text-amber-400">AI GENERATED WEB APP</span>
+      <span class="text-xs font-mono text-amber-400">PROMPT-BASED TEMPLATE DEMO</span>
       <span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 text-[10px] rounded">LIVE</span>
     </div>
     <h1 class="text-xl font-extrabold text-white uppercase tracking-wide">${p}</h1>
-    <p class="text-xs text-slate-300 leading-relaxed">Custom responsive web application synthesized by J.A.R.V.I.S. Autonomous Web Dev Studio for "${p}".</p>
+    <p class="text-xs text-slate-300 leading-relaxed">Demo template generated locally by J.A.R.V.I.S. for "${p}".</p>
     <div class="flex space-x-2 pt-2">
       <button onclick="this.textContent='✔ FEATURE ACTIVE'" class="px-4 py-2 bg-cyan-400 hover:bg-amber-400 text-black font-bold text-xs rounded transition">⚡ LAUNCH FEATURE</button>
     </div>
@@ -6700,9 +6700,9 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
         webdevEditor.value = customHtml;
         renderWebDevPreview();
       }
-      if (statusBadge) statusBadge.textContent = 'RENDERED LIVE';
+      if (statusBadge) statusBadge.textContent = 'TEMPLATE PREVIEW READY';
       playHudSound('confirm');
-      showToast(`Generated Website: ${p}`);
+      showToast(`Generated Template: ${p}`);
     }
 
     const aiWebdevForm = document.getElementById('ai-webdev-form');
@@ -7133,8 +7133,8 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
         bioOverlay.classList.remove('hidden');
         bioOverlay.classList.add('flex');
       }
-      if (bioStatus) bioStatus.textContent = 'LOCKED // AUTH REQUIRED';
-      if (bioReadout) bioReadout.innerHTML = 'Tap Retinal Scanner, enter PIN (<code class="text-amber-300">3000</code>), or click <strong>🔓 SCAN BIOMETRICS</strong>';
+      if (bioStatus) bioStatus.textContent = 'LOCKED // DEMO MODE';
+      if (bioReadout) bioReadout.innerHTML = 'Demo only: this visual lock does not verify identity. No PIN or biometric authentication is configured.';
       speakText("Biometric security lock engaged. Retinal or voiceprint verification required.");
     }
 
@@ -7143,7 +7143,7 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
       bioScanning = true;
       playHudSound('chirp');
       if (bioStatus) bioStatus.textContent = 'SCANNING RETINA...';
-      if (bioReadout) bioReadout.textContent = 'Analyzing retinal blood vessel geometry & voiceprint harmonics...';
+      if (bioReadout) bioReadout.textContent = 'Running visual animation only — no biometric sensor is being read.';
 
       const scanInterval = setInterval(() => {
         bioScanProgress += 12;
@@ -7156,8 +7156,8 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
             bioOverlay.classList.add('hidden');
             bioOverlay.classList.remove('flex');
           }
-          speakText("Biometric identity verified. Welcome back, Commander.");
-          showToast("Biometric Identity Verified ✔");
+          speakText("Visual demo complete. Identity was not verified.");
+          showToast("Visual Demo Complete (Not Authenticated)");
         }
       }, 90);
     }
@@ -7217,7 +7217,7 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
     }
     renderBiometricScanner();
 
-    // --- SMART ENVIRONMENT / IOT CONTROLLER ---
+    // --- SMART ENVIRONMENT / IOT SIMULATOR ---
     const iotState = {
       lightsOn: true,
       lightsPct: 85,
