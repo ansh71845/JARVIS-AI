@@ -71,11 +71,16 @@ public class NativeAssistantPlugin extends Plugin {
                         .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                         .build());
                     ttsReady = true;
-                    for (String queued : new ArrayList<>(pendingSpeech)) {
-                        textToSpeech.speak(queued, TextToSpeech.QUEUE_FLUSH, null,
-                            "jarvis-" + System.currentTimeMillis());
-                    }
+                    List<String> queuedSpeech = new ArrayList<>(pendingSpeech);
                     pendingSpeech.clear();
+                    for (int index = 0; index < queuedSpeech.size(); index++) {
+                        String queued = queuedSpeech.get(index);
+                        int queueMode = index == 0
+                            ? TextToSpeech.QUEUE_FLUSH
+                            : TextToSpeech.QUEUE_ADD;
+                        textToSpeech.speak(queued, queueMode, null,
+                            "jarvis-" + System.nanoTime() + "-" + index);
+                    }
                 } else {
                     pendingSpeech.clear();
                     ttsReady = false;
