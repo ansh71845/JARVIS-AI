@@ -32,3 +32,20 @@
 
 ## Not yet verified
 No claim is made that all controls, Gemini flows, native permissions, or phone-specific behaviors have passed runtime tests. Those require full handler inspection and physical/emulated device validation.
+
+
+## Follow-up changes committed
+- **Gemini model:** replaced the retired `gemini-1.5-flash` endpoint with `gemini-3.8-flash`; API keys are sent in the `x-goog-api-key` header instead of the URL; added a 20-second timeout and visible API/network errors. When the user has configured Gemini, failures no longer silently switch to an unrelated provider.
+- **Native speech:** fixed pending TextToSpeech queue playback so subsequent queued utterances use `QUEUE_ADD` rather than repeatedly flushing the queue.
+- **Phone dialer:** removed the fabricated "connected" call transcript/timer. The action now validates the number and hands off to Android's real `tel:` dialer. Ending the JARVIS panel no longer claims to hang up a real call.
+- **Biometric UI:** removed the fake PIN form and relabeled the scanner as a visual demo; it does not authenticate identity.
+- **JavaScript sandbox:** moved execution into a disposable Web Worker, passed only a minimal city context, removed direct access to app functions/state, and added a two-second termination limit. This is an execution-isolation improvement, not a promise that arbitrary code is safe to run.
+- **Capacitor defaults:** disabled mixed-content loading and WebView debugging in the real config and the embedded project-template copy.
+- **CI:** added inline JavaScript syntax and duplicate static-ID checks before the Android build. One audit-branch build completed successfully, including those checks and APK artifact upload.
+
+## Remaining high-priority work
+- Audit the full 243-button surface and classify controls as real, local simulation, or unsupported. Some existing features (e.g. smart-home controls and visual lock) are local simulations and must not be marketed as physical-device integrations or security.
+- Review the Web Dev preview iframe and template interpolation for injection risks.
+- Add a secure backend/proxy if this will be distributed beyond personal use; client-side API keys are recoverable by anyone who can inspect the app.
+- Complete Android device tests for the dialer handoff, TTS queue, permission prompts, lifecycle, and Web Worker support.
+- Validate the newest commit's CI run before opening a PR. Do not merge this branch into `main` until the final CI run and review pass.
