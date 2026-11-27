@@ -3782,21 +3782,42 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
       state.lastQueryContext = q;
       const lower = q.toLowerCase();
 
-      // Stage A: If user locked a Gemini API key in the RAM Vault, query Gemini first
+      // Stage A: If the user supplied a Gemini API key, use the current stable model.
+      // Do not silently fall back to another provider when an explicitly configured key fails.
       if (state.ramApiKey) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 20000);
         try {
-          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(state.ramApiKey)}`;
+          const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent';
           const res = await fetch(endpoint, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'x-goog-api-key': state.ramApiKey
+            },
+            signal: controller.signal,
             body: JSON.stringify({
               contents: [{ parts: [{ text: `You are JARVIS, Tony Stark's ultra-intelligent AI assistant. Give the exact, direct, factual answer in 2 concise sentences without filler: ${q}` }] }]
             })
           });
-          const data = await res.json();
-          const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (reply) return { text: reply.trim(), source: 'GEMINI NEURAL API', url: null };
-        } catch (e) {}
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            const detail = data?.error?.message || `HTTP ${res.status}`;
+            return { text: `Gemini request failed (${res.status}): ${detail}`, source: 'GEMINI API ERROR', url: null };
+          }
+          const reply = data?.candidates?.[0]?.content?.parts?.map(part => part.text || '').join('').trim();
+          if (!reply) {
+            return { text: 'Gemini returned no text. Check the prompt and API response details.', source: 'GEMINI API ERROR', url: null };
+          }
+          return { text: reply, source: 'GEMINI 3.8 FLASH', url: null };
+        } catch (error) {
+          const detail = error?.name === 'AbortError'
+            ? 'The request timed out after 20 seconds.'
+            : (error?.message || 'Network request failed.');
+          return { text: `Gemini request failed: ${detail}`, source: 'GEMINI API ERROR', url: null };
+        } finally {
+          clearTimeout(timeoutId);
+        }
       }
 
       // Stage B: Try Keyless Live AI Endpoint (Pollinations Open Text API) with a fast 4.5s timeout for exact direct answers to any question!
