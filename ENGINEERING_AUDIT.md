@@ -49,3 +49,7 @@ No claim is made that all controls, Gemini flows, native permissions, or phone-s
 - Add a secure backend/proxy if this will be distributed beyond personal use; client-side API keys are recoverable by anyone who can inspect the app.
 - Complete Android device tests for the dialer handoff, TTS queue, permission prompts, lifecycle, and Web Worker support.
 - Validate the newest commit's CI run before opening a PR. Do not merge this branch into `main` until the final CI run and review pass.
+
+- **Website preview:** added an opaque-origin iframe sandbox (`sandbox="allow-scripts"`) and escaped prompt text before inserting it into generated HTML.
+- **Smart-home panel:** relabeled the local state-only controls as a simulator rather than implying connected physical devices.
+- **Android transport:** disabled cleartext HTTP traffic in the native manifest and its embedded template copy.
