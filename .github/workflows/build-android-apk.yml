@@ -5,6 +5,10 @@ on:
     branches: [main, audit/jarvis-mark-vii-hardening]
   workflow_dispatch:
 
+concurrency:
+  group: jarvis-android-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
