@@ -3809,7 +3809,7 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
             : (error?.message || 'Network request failed.');
           return { text: `Gemini request failed: ${detail}`, source: 'GEMINI API ERROR', url: null };
         } finally {
-          clearTimeout(timeoutId);
+          if (timeoutId !== null) clearTimeout(timeoutId);
         }
       }
 
@@ -5917,6 +5917,7 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
 
         let workerUrl;
         let worker;
+        let timeoutId = null;
         let finished = false;
         const finish = (message) => {
           if (finished) return;
@@ -5930,7 +5931,7 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
         try {
           workerUrl = URL.createObjectURL(new Blob([workerSource], { type: 'text/javascript' }));
           worker = new Worker(workerUrl);
-          const timeoutId = setTimeout(() => finish('Execution stopped: time limit exceeded (2 seconds).'), 2000);
+          timeoutId = setTimeout(() => finish('Execution stopped: time limit exceeded (2 seconds).'), 2000);
           worker.onmessage = (event) => {
             if (event.data?.ok) {
               finish(`OUTPUT: ${event.data.output}`);
