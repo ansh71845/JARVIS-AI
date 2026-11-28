@@ -923,25 +923,6 @@
       globeCtx.fillText((state.location.city || 'GLOBAL').slice(0, 9), gcx + 36, gcy - 12);
     }
 
-    // 6. TOP-LEFT NETWORK THROUGHPUT SPARKLINE
-    function renderSparkline() {
-      if (Math.floor(tick * 10) % 4 === 0) {
-        sparkData.shift();
-        sparkData.push(4 + Math.random() * 28);
-      }
-      netCtx.clearRect(0, 0, 130, 38);
-      netCtx.strokeStyle = 'rgba(0, 229, 255, 0.85)';
-      netCtx.lineWidth = 1.2;
-      netCtx.beginPath();
-      sparkData.forEach((v, i) => {
-        const x = (i / (sparkData.length - 1)) * 130;
-        const y = 35 - v;
-        if (i === 0) netCtx.moveTo(x, y);
-        else netCtx.lineTo(x, y);
-      });
-      netCtx.stroke();
-    }
-
     let lastMasterFrame = 0;
     function animateMasterLoop() {
       if (document.hidden) return;
@@ -954,7 +935,6 @@
       renderJarvisCornerRing();
       renderArmorBlueprints();
       renderRadarAndGlobe();
-      renderSparkline();
       requestAnimationFrame(animateMasterLoop);
     }
     animateMasterLoop();
@@ -968,7 +948,7 @@
     turbineCanvas.addEventListener('click', () => {
       turbineBoost = 3.5;
       playHudSound('chirp');
-      showToast('Turbine RPM Boosted to 28,400');
+      showToast('Turbine animation updated');
     });
     jarvisRingCanvas.addEventListener('click', () => {
       playHudSound('confirm');
@@ -2023,7 +2003,7 @@
       }
       if (lower.includes('diagnostic') || lower.includes('system status')) {
         state.isProcessing = false;
-        const resp = "Mark VIII Full System Diagnostic: Interactive holographic particle background active at 60 FPS, Dual-Engine Voice Synthesizer locked, and Multi-API Exact Intelligence online.";
+        const resp = "Local interface diagnostics completed. Hardware performance and external service availability are not measured by this browser view.";
         appendMessage('J.A.R.V.I.S.', resp, { source: 'MARK VIII CAD' });
         speakText(resp);
         return;
@@ -2359,7 +2339,7 @@
         applyHudTheme(2); // Stealth Gold
         reactorSurge = 4.2;
         turbineBoost = 5.0;
-        const msg = "HOUSE PARTY PROTOCOL ACTIVATED: Orbital uplink established. Deploying all Mark I through Mark VII autonomous armor units to your coordinates. Turbine output overclocked to 28,400 RPM and Arc Reactor sustaining 300% harmonic capacity.";
+        const msg = "HOUSE PARTY VISUAL SIMULATION ACTIVATED. Local interface effects updated. No physical armor, orbital uplink, or hardware controls are connected.";
         appendMessage('J.A.R.V.I.S.', msg, { source: 'PROTOCOL // HOUSE PARTY' });
         speakText(msg);
       } else if (protoName === 'lockdown') {
@@ -3396,8 +3376,6 @@
     const bgCtx = bgCanvas ? bgCanvas.getContext('2d') : null;
     let bgW = window.innerWidth;
     let bgH = window.innerHeight;
-    let bgMouseX = bgW / 2;
-    let bgMouseY = bgH / 2;
     const bgParticles = [];
     const bgShockwaves = [];
 
@@ -3411,8 +3389,9 @@
     window.addEventListener('resize', resizeBgCanvas);
     resizeBgCanvas();
 
-    // Initialize 68 interactive holographic telemetry nodes, hex-drones, and data streams
-    for (let i = 0; i < 68; i++) {
+    // Keep the ambient background lightweight on phones.
+    const bgParticleCount = window.innerWidth < 768 ? 22 : 42;
+    for (let i = 0; i < bgParticleCount; i++) {
       bgParticles.push({
         x: Math.random() * bgW,
         y: Math.random() * bgH,
@@ -3476,18 +3455,7 @@
       bgCtx.setLineDash([]);
       bgCtx.restore();
 
-      // 3. Interactive Cursor Gravity Reticle
-      bgCtx.save();
-      bgCtx.translate(bgMouseX, bgMouseY);
-      bgCtx.rotate(tick * 0.5);
-      bgCtx.strokeStyle = 'rgba(0, 229, 255, 0.28)';
-      bgCtx.lineWidth = 1;
-      bgCtx.beginPath();
-      bgCtx.arc(0, 0, 22, 0, Math.PI * 1.5);
-      bgCtx.stroke();
-      bgCtx.restore();
-
-      // 4. Update & Draw Constellation Particles + Mouse Energy Tethers
+      // 3. Update and draw the ambient particle field.
       const speedMult = state.isSpeaking ? 2.4 : (state.isProcessing ? 1.8 : 1.0);
       for (let i = 0; i < bgParticles.length; i++) {
         const p = bgParticles[i];
@@ -3498,37 +3466,6 @@
         if (p.x > bgW) p.x = 0;
         if (p.y < 0) p.y = bgH;
         if (p.y > bgH) p.y = 0;
-
-        //Gentle attraction/interaction with mouse cursor
-        const dxM = bgMouseX - p.x;
-        const dyM = bgMouseY - p.y;
-        const distM = Math.sqrt(dxM * dxM + dyM * dyM);
-        if (distM < 175) {
-          bgCtx.strokeStyle = p.isAmber
-            ? `rgba(255, 123, 0, ${(1 - distM / 175) * 0.45})`
-            : `rgba(0, 229, 255, ${(1 - distM / 175) * 0.45})`;
-          bgCtx.lineWidth = 0.9;
-          bgCtx.beginPath();
-          bgCtx.moveTo(p.x, p.y);
-          bgCtx.lineTo(bgMouseX, bgMouseY);
-          bgCtx.stroke();
-        }
-
-        // Connect nearby particles into an animated neural constellation mesh
-        for (let j = i + 1; j < bgParticles.length; j++) {
-          const p2 = bgParticles[j];
-          const dx = p.x - p2.x;
-          const dy = p.y - p2.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 115) {
-            bgCtx.strokeStyle = `rgba(0, 229, 255, ${(1 - dist / 115) * 0.22})`;
-            bgCtx.lineWidth = 0.7;
-            bgCtx.beginPath();
-            bgCtx.moveTo(p.x, p.y);
-            bgCtx.lineTo(p2.x, p2.y);
-            bgCtx.stroke();
-          }
-        }
 
         // Draw node
         bgCtx.fillStyle = p.isAmber ? 'rgba(255, 140, 0, 0.75)' : 'rgba(0, 229, 255, 0.72)';
@@ -3747,7 +3684,7 @@
       powerOverlay.classList.remove('hidden');
       powerOverlay.classList.add('flex');
       powerTitle.textContent = "REBOOTING MARK VII TACTICAL HUD...";
-      powerSub.textContent = "Flushing neural memory buffers, restarting 60 FPS CAD engines, and verifying zero-leak security vault...";
+      powerSub.textContent = "Restarting local visual modules and reinitializing interface state...";
       powerSpinner.classList.remove('hidden');
       bootWrap.classList.remove('hidden');
       powerOnBtn.classList.add('hidden');
@@ -3761,7 +3698,7 @@
         bootBar.style.width = '0%';
         reactorSurge = 3.8;
         turbineBoost = 4.0;
-        speakText("System reboot complete. All Mark VII subsystems operating at 100 percent capacity.");
+        speakText("Interface restart complete. Local modules are ready.");
         showToast("System Reboot Complete");
       }, 1400);
     }
@@ -4356,11 +4293,11 @@
     <h1 class="text-2xl font-extrabold text-white mt-1">Projects and services</h1>
     <p class="text-xs text-slate-300 mt-2">Add project descriptions, screenshots, and contact details before publishing.</p>
     <div class="grid grid-cols-3 gap-3 mt-4 text-center">
-      <div class="p-3 bg-slate-950 border border-cyan-500/30 rounded"><div class="text-lg font-bold text-cyan-400">PREVIEW</div><div class="text-[10px] text-slate-400">UPTIME</div></div>
-      <div class="p-3 bg-slate-950 border border-amber-500/30 rounded"><div class="text-lg font-bold text-amber-400">60 FPS</div><div class="text-[10px] text-slate-400">CAD MOTION</div></div>
-      <div class="p-3 bg-slate-950 border border-emerald-500/30 rounded"><div class="text-lg font-bold text-emerald-400">NOT CONNECTED</div><div class="text-[10px] text-slate-400">AI CORE</div></div>
+      <div class="p-3 bg-slate-950 border border-cyan-500/30"><div class="text-sm font-bold text-cyan-300">LOCAL PREVIEW</div><div class="text-[10px] text-slate-400">NOT PUBLISHED</div></div>
+      <div class="p-3 bg-slate-950 border border-amber-500/30"><div class="text-sm font-bold text-amber-300">STANDARD</div><div class="text-[10px] text-slate-400">MOTION PROFILE</div></div>
+      <div class="p-3 bg-slate-950 border border-emerald-500/30"><div class="text-sm font-bold text-emerald-300">NOT CONNECTED</div><div class="text-[10px] text-slate-400">EXTERNAL AI SERVICE</div></div>
     </div>
-    <button disabled aria-disabled="true" class="mt-4 w-full py-2 bg-cyan-400 hover:bg-amber-400 text-black font-bold text-xs rounded transition"> DEPLOYMENT NOT CONFIGURED</button>
+    <p class="mt-4 text-xs text-slate-400">This is a local preview template. Deployment requires a configured hosting target.</p>
   </div>
 </body>
 </html>`,
@@ -5326,7 +5263,7 @@
       }
     }
 
-    // 2. 6-COLOR HSL HUE-ROTATION PALETTE & POWER SAVE MODE (60 FPS -> 15 FPS)
+    // 2. 6-COLOR HSL HUE-ROTATION PALETTE & 3D ORB POWER SAVE MODE
     let openClawPowerSave = localStorage.getItem('jarvis_openclaw_powersave') === 'true';
     const savedHue = localStorage.getItem('jarvis_openclaw_hue') || '0';
 
@@ -5361,13 +5298,13 @@
       if (openClawPowerSave) {
         document.body.classList.add('power-save-mode');
         if (powerSaveBtn) {
-          powerSaveBtn.textContent = ' 15 FPS (ECO)';
+          powerSaveBtn.textContent = ' ORB: ECO';
           powerSaveBtn.className = 'px-1.5 py-0.5 bg-amber-500 text-black font-bold rounded-sm';
         }
       } else {
         document.body.classList.remove('power-save-mode');
         if (powerSaveBtn) {
-          powerSaveBtn.textContent = ' 60 FPS';
+          powerSaveBtn.textContent = ' ORB: STANDARD';
           powerSaveBtn.className = 'px-1.5 py-0.5 bg-slate-950 border border-cyan-500/40 text-slate-300 hover:text-amber-300 rounded-sm';
         }
       }
@@ -5378,7 +5315,7 @@
         openClawPowerSave = !openClawPowerSave;
         localStorage.setItem('jarvis_openclaw_powersave', String(openClawPowerSave));
         updatePowerSaveUI();
-        speakText(openClawPowerSave ? 'OpenClaw Power Save Mode enabled. Render loop throttled to 15 frames per second.' : 'Full 60 frames per second tactical render loop restored.');
+        speakText(openClawPowerSave ? '3D orb reduced-motion mode enabled.' : '3D orb standard motion mode enabled.');
       });
     }
 

@@ -194,6 +194,7 @@ img,canvas,iframe,video,svg{max-width:100%}input,select,textarea,button{max-widt
     button, a, input, select, textarea { touch-action: manipulation; }
     :focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
     button { -webkit-tap-highlight-color: transparent; }
+    button { border-radius: 3px !important; }
     @media (max-width: 767px) {
       body { background-size: 100% 100%, 48px 48px, 48px 48px, 8px 8px, 8px 8px; }
       .cad-frame { box-shadow: none; }
@@ -234,7 +235,7 @@ img,canvas,iframe,video,svg{max-width:100%}input,select,textarea,button{max-widt
   <canvas id="bgMotionCanvas" class="fixed inset-0 w-full h-full pointer-events-none z-0"></canvas>
 
   <!-- ===================================================================== -->
-  <!-- VERIFIED REAL MEDIA & EXTERNAL APP EXECUTION DECK (ZERO ERROR 153!)   -->
+  <!-- EXTERNAL MEDIA & APP HANDOFF DECK   -->
   <!-- ===================================================================== -->
   <div id="external-launch-banner" class="fixed inset-x-3 top-16 sm:left-1/2 sm:-translate-x-1/2 z-[999] hidden flex-col space-y-3 cad-frame p-4 border-2 border-cyan-400 bg-[#040812]/98 shadow-[0_0_45px_rgba(0,229,255,0.45)] font-mono-hud text-xs max-w-2xl w-auto sm:w-[94%] rounded-lg max-h-[82vh] overflow-y-auto">
     <div class="flex items-center justify-between border-b border-cyan-500/30 pb-2">
@@ -282,7 +283,7 @@ img,canvas,iframe,video,svg{max-width:100%}input,select,textarea,button{max-widt
         <span id="direct-app-icon" class="text-xl"></span>
         <div>
           <div id="direct-app-title" class="font-display-hud text-sm font-bold text-white tracking-wider">WHATSAPP DESKTOP // LIVE AUTOMATION</div>
-          <div id="direct-app-subtitle" class="font-mono-hud text-[10px] text-emerald-400">ENCRYPTED END-TO-END SESSION ACTIVE</div>
+          <div id="direct-app-subtitle" class="font-mono-hud text-[10px] text-emerald-400">EXTERNAL APP HANDOFF</div>
         </div>
       </div>
       <div class="flex items-center space-x-2 font-mono-hud text-xs">
@@ -304,7 +305,7 @@ img,canvas,iframe,video,svg{max-width:100%}input,select,textarea,button{max-widt
         <div class="md:col-span-4 bg-[#0b141a] border-r border-slate-800 flex flex-col">
           <div class="p-3 bg-[#202c33] flex items-center justify-between">
             <span class="font-bold text-emerald-400 text-sm">WhatsApp Chats</span>
-            <span class="text-[10px] font-mono-hud px-2 py-0.5 bg-emerald-950 text-emerald-300 rounded">AUTO-CONNECTED</span>
+            <span class="text-[10px] font-mono-hud px-2 py-0.5 bg-emerald-950 text-emerald-300 rounded">HANDOFF ONLY</span>
           </div>
           <div id="wa-contacts-sidebar" class="flex-1 overflow-y-auto p-3 space-y-2 text-xs">
             <div class="text-slate-400 text-[11px]">Enter recipient name or phone number to message:</div>
@@ -321,9 +322,9 @@ img,canvas,iframe,video,svg{max-width:100%}input,select,textarea,button{max-widt
           <div class="p-3 bg-[#202c33] border-b border-slate-800 flex items-center justify-between">
             <div>
               <div id="wa-active-header-name" class="font-bold text-white text-sm">Direct WhatsApp Dispatch</div>
-              <div id="wa-active-header-status" class="text-[11px] text-emerald-400">online • automated by J.A.R.V.I.S.</div>
+              <div id="wa-active-header-status" class="text-[11px] text-emerald-400">External app handoff</div>
             </div>
-            <span class="text-[10px] font-mono-hud text-slate-400"> End-to-End Encrypted</span>
+            <span class="text-[10px] font-mono-hud text-slate-400"> Message security is handled by WhatsApp</span>
           </div>
 
           <div id="wa-direct-messages-box" class="flex-1 p-4 overflow-y-auto space-y-2.5 bg-[#080f14] max-h-[340px]">
@@ -484,7 +485,7 @@ img,canvas,iframe,video,svg{max-width:100%}input,select,textarea,button{max-widt
 
       <!-- Top-Left Power Strip (Exact Reference Match: SHUTDOWN / RESTART / RESET) -->
       <div class="flex flex-wrap items-center gap-1 font-mono-hud text-[10px]">
-        <button type="button" id="lock-os-btn" class="px-2 py-0.5 bg-cyan-950/90 border border-cyan-400/60 hover:bg-cyan-400 hover:text-black text-cyan-200 transition font-bold" title="Engage Biometric Retinal Lock"> LOCK</button>
+        <button type="button" id="lock-os-btn" class="px-2 py-0.5 bg-cyan-950/90 border border-cyan-400/60 hover:bg-cyan-400 hover:text-black text-cyan-200 transition font-bold" title="Open the visual lock demo"> LOCK</button>
         <button type="button" id="power-off-btn" class="px-2 py-0.5 bg-rose-950/80 border border-rose-500/50 hover:bg-rose-600 text-rose-200 hover:text-white transition font-bold" title="Switch Off Phone / OS"> SHUTDOWN</button>
         <button type="button" id="sys-reboot-btn" class="px-2 py-0.5 bg-slate-900/90 border border-cyan-500/30 hover:border-amber-400 text-amber-300 transition font-bold" title="Reboot System">RESTART HUD</button>
         <button type="button" id="clear-feed-btn" class="px-2 py-0.5 bg-slate-900/90 border border-cyan-500/30 hover:border-rose-500 text-slate-300 hover:text-rose-400 transition">RESET</button>
@@ -577,15 +578,10 @@ img,canvas,iframe,video,svg{max-width:100%}input,select,textarea,button{max-widt
             <div class="text-slate-400">Download: <span id="net-down" class="text-emerald-400">NOT MEASURED</span></div>
           </div>
           <div class="col-span-6">
-            <canvas id="netSparkCanvas" width="130" height="38" class="w-full h-9 bg-black/60 border border-cyan-500/25"></canvas>
+            <div class="col-span-6 min-w-0 border border-cyan-500/20 bg-black/40 p-2 text-[9px] leading-relaxed text-slate-500">Throughput metrics are not available in this browser session.</div>
           </div>
         </div>
 
-        <!-- Mini Day-of-Week Strip (Su Mo Tu We Th Fr Sa) -->
-        <div class="mt-2 pt-1.5 border-t border-cyan-500/15 flex justify-between text-[9px] font-mono-hud text-slate-400 px-1">
-          <span>Su 01</span><span>Mo 02</span><span>Tu 03</span><span>We 04</span><span>Th 05</span><span>Fr 06</span>
-          <span class="text-amber-400 font-bold border-b border-amber-400">Sa 07</span>
-        </div>
       </div>
 
       <!-- Angled Stark Launchers + Orthogonal CAD Turbine Schematic -->
@@ -595,7 +591,7 @@ img,canvas,iframe,video,svg{max-width:100%}input,select,textarea,button{max-widt
           <div class="col-span-5 space-y-1.5 font-mono-hud text-[10px]">
             <div class="flex items-center justify-between">
               <span class="text-[9px] text-amber-400 tracking-wider">APP BRIDGE</span>
-              <span id="apps-count" class="text-[9px] text-cyan-400">4 ACTIVE</span>
+              <span id="apps-count" class="text-[9px] text-cyan-400">APP LINKS</span>
             </div>
             <div class="stark-launcher px-2 py-1 flex items-center justify-between">
               <span class="text-cyan-200 font-semibold">Calendar</span>
@@ -824,7 +820,7 @@ img,canvas,iframe,video,svg{max-width:100%}input,select,textarea,button{max-widt
               </div>
               <div class="flex items-center space-x-1.5">
                 <span id="openclaw-agent-state" class="px-2 py-0.5 border rounded-sm font-bold orb-state-idle">● STATE: IDLE</span>
-                <button type="button" id="power-save-toggle-btn" class="px-1.5 py-0.5 bg-slate-950 border border-cyan-500/40 text-slate-300 hover:text-amber-300 rounded-sm" title="OpenClaw Power Save Mode (Throttles LOCAL to 15 FPS)"> 60 FPS</button>
+                <button type="button" id="power-save-toggle-btn" class="px-1.5 py-0.5 bg-slate-950 border border-cyan-500/40 text-slate-300 hover:text-amber-300 rounded-sm" title="Switch the 3D orb between standard and reduced motion"> ORB: STANDARD</button>
               </div>
             </div>
 
@@ -1400,7 +1396,7 @@ img,canvas,iframe,video,svg{max-width:100%}input,select,textarea,button{max-widt
         <div id="subapp-view-spotify" class="subapp-view hidden bg-[#090805] border border-amber-500/40 p-3 space-y-2.5">
           <div class="flex items-center justify-between border-b border-amber-500/30 pb-1.5">
             <span class="font-display-hud text-sm text-amber-400"> STARK TUNES // IN-APP SYNTHESIZER DECK</span>
-            <span id="tunes-status" class="text-[10px] text-emerald-400">60FPS AUDIO SYNTH READY</span>
+            <span id="tunes-status" class="text-[10px] text-emerald-400">AUDIO SYNTH // READY</span>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <button type="button" data-track="arc" class="tunes-track-btn p-2.5 bg-slate-950 border border-amber-500/40 hover:border-cyan-400 text-left">
