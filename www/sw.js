@@ -1,7 +1,7 @@
 // J.A.R.V.I.S. Mark VII PWA service worker
 // Network-first for fresh application content, with a bounded offline fallback.
-const CACHE_NAME = 'jarvis-mark7-os-v3';
-const APP_SHELL = ['./', './index.html', './manifest.json'];
+const CACHE_NAME = 'jarvis-mark7-os-v4';
+const APP_SHELL = ['./', './index.html', './manifest.json', './favicon.png', './icon-512.png', './privacy.html', './terms.html', './404.html'];
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
