@@ -4,7 +4,7 @@
 <p align="center"><strong>A personal AI assistant and productivity command centre for web and Android.</strong></p>
 <p align="center">
 <a href="https://github.com/ansh71845/JARVIS-AI/actions/workflows/build-android-apk.yml"><img alt="Android build workflow" src="https://github.com/ansh71845/JARVIS-AI/actions/workflows/build-android-apk.yml/badge.svg?branch=audit/jarvis-mark-vii-hardening" /></a>
-<a href="https://jarvis-1oa6whwst-ansh-0328.vercel.app">Open current preview</a> · <a href="README_ANDROID_INSTALL.md">Android installation guide</a> · <a href="www/privacy.html">Privacy policy</a>
+<a href="https://jarvis-ai-git-audit-jarvis-mark-vii-hardening-ansh-0328.vercel.app">Open current preview</a> · <a href="README_ANDROID_INSTALL.md">Android installation guide</a> · <a href="www/privacy.html">Privacy policy</a>
 </p>
 
 > **Visual note:** Images in this README are concept illustrations for the J.A.R.V.I.S. visual direction, not screenshots of the running application.
@@ -97,7 +97,7 @@ The generated APK is a **debug build**, not a Play Store release-signed package.
 
 - [GitHub Actions workflow](.github/workflows/build-android-apk.yml)
 - [Previously verified Android build](https://github.com/ansh71845/JARVIS-AI/actions/runs/46158797729)
-- [Current Vercel audit preview](https://jarvis-1oa6whwst-ansh-0328.vercel.app)
+- [Current Vercel audit preview](https://jarvis-ai-git-audit-jarvis-mark-vii-hardening-ansh-0328.vercel.app)
 - [Draft engineering PR #1](https://github.com/ansh71845/JARVIS-AI/pull/1)
 
 The linked successful build verified JavaScript syntax, six network-diagnostics tests, static HTML IDs, canvas references, Capacitor sync, Android debug APK compilation, and artifact upload for its recorded commit. Later documentation changes trigger new workflow runs; use the Actions page for the latest result.
