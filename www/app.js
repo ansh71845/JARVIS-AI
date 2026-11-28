@@ -1026,7 +1026,7 @@
         document.getElementById('mail-sub-input').value = '';
         playHudSound('confirm');
         saveAppsState();
-        showToast('Encrypted Transmission Dispatched');
+        showToast('Local message note saved. No email was sent.');
       }
     });
 
@@ -1808,7 +1808,7 @@
         state.isProcessing = false;
         const parsedWa = parseWhatsAppCommand(q);
         dispatchRealExternalApp('WhatsApp', parsedWa.webUrl, parsedWa.nativeUri, parsedWa.description);
-        appendMessage('J.A.R.V.I.S.', parsedWa.spokenReply, { source: 'WHATSAPP LIVE AUTOMATION', url: parsedWa.webUrl });
+        appendMessage('J.A.R.V.I.S.', parsedWa.spokenReply, { source: 'WHATSAPP DRAFT HANDOFF', url: parsedWa.webUrl });
         speakText(parsedWa.spokenReply);
         return;
       }
@@ -2116,8 +2116,8 @@
     function startVoiceCapture() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
-        setMicVisualState('blocked', 'BROWSER SPEECH API UNAVAILABLE  -  RUNNING SIMULATED VOICE');
-        runSimulatedVoiceDemo();
+        setMicVisualState('blocked', 'BROWSER SPEECH API UNAVAILABLE  -  USE VOICE DEMO BUTTON');
+        showToast('Live speech recognition is not supported in this browser. Use the separately labelled Voice Demo button to test the command flow.', 'error');
         return;
       }
 
@@ -3190,7 +3190,12 @@
           if (waChat) {
             const msgDiv = document.createElement('div');
             msgDiv.className = 'p-1.5 bg-cyan-950/60 border-l-2 border-cyan-400 text-cyan-100';
-            msgDiv.innerHTML = `<strong class="text-cyan-300">Commander (Now):</strong> ${escapeHTML(optionalQuery)}`;
+            const label = document.createElement('strong');
+            label.className = 'text-cyan-300';
+            label.textContent = 'Commander (Draft): ';
+            const message = document.createElement('span');
+            message.textContent = optionalQuery;
+            msgDiv.append(label, message);
             waChat.appendChild(msgDiv);
             waChat.scrollTop = waChat.scrollHeight;
           }
@@ -3739,7 +3744,7 @@
       callSecs = 0;
       if (callTimerEl) callTimerEl.textContent = '00:00';
 
-      if (!/^\\+?\\d{3,15}$/.test(dialNumber)) {
+      if (!/^\+?[0-9]{3,15}$/.test(dialNumber)) {
         if (callerNameEl) callerNameEl.textContent = 'NUMBER REQUIRED';
         if (callBadgeEl) callBadgeEl.textContent = 'NOT STARTED';
         if (callTranscriptEl) callTranscriptEl.textContent = 'Enter a valid phone number or select a saved contact. J.A.R.V.I.S. cannot connect or simulate a live call.';
@@ -3774,7 +3779,7 @@
       if (callBadgeEl) callBadgeEl.textContent = "LINE READY";
       if (callTimerEl) callTimerEl.textContent = "00:00";
       if (callTranscriptEl) callTranscriptEl.textContent = "J.A.R.V.I.S. panel closed. Active calls must be ended in the Android Phone app.";
-      showToast("Call Ended");
+      showToast("J.A.R.V.I.S. phone panel closed. End any active call in the Phone app.");
     }
 
     const startCallBtn = document.getElementById('start-call-btn');
@@ -3968,12 +3973,12 @@
       const webUrl = phoneDigits ? `https://wa.me/${phoneDigits}${messageBody ? '?text=' + encodeURIComponent(messageBody) : ''}` : (messageBody ? `https://wa.me/?text=${encodeURIComponent(messageBody)}` : `https://web.whatsapp.com/`);
 
       const desc = messageBody
-        ? `Opened WhatsApp for ${recipientName} & sent: "${messageBody}"`
-        : `Opened WhatsApp for ${recipientName}`;
+        ? `Prepared a WhatsApp message draft for ${recipientName || 'the selected recipient'}. Review and send it in WhatsApp.`
+        : `Opening WhatsApp for ${recipientName || 'the selected recipient'}.`;
 
       const spokenReply = messageBody
-        ? `WhatsApp is now open on your screen. I have selected ${recipientName} and sent your message: ${messageBody}.`
-        : `WhatsApp is now open on your screen, Commander.`;
+        ? `I prepared a WhatsApp message draft for ${recipientName || 'the selected recipient'}. Review the recipient and message, then tap Send in WhatsApp. Nothing has been sent yet.`
+        : `Opening WhatsApp. No message has been sent.`;
 
       return { recipientName, phoneDigits, messageBody, nativeUri, webUrl, description: desc, spokenReply };
     }
@@ -4372,7 +4377,7 @@
       const p = promptText.trim() || 'Futuristic AI App';
       const safePrompt = p.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
       const statusBadge = document.getElementById('webdev-status-badge');
-      if (statusBadge) statusBadge.textContent = 'GENERATING CODE...';
+      if (statusBadge) statusBadge.textContent = 'BUILDING LOCAL TEMPLATE...';
 
       const customHtml = `<!DOCTYPE html>
 <html>
@@ -4383,12 +4388,12 @@
   <div class="max-w-xl mx-auto border border-cyan-400/50 rounded-xl p-5 bg-slate-900/90 space-y-3 shadow-xl">
     <div class="flex justify-between items-center border-b border-cyan-500/30 pb-2">
       <span class="text-xs font-mono text-amber-400">PROMPT-BASED TEMPLATE DEMO</span>
-      <span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 text-[10px] rounded">LIVE</span>
+      <span class="px-2 py-0.5 bg-slate-800 text-slate-300 text-[10px]">LOCAL PREVIEW</span>
     </div>
     <h1 class="text-xl font-extrabold text-white uppercase tracking-wide">${safePrompt}</h1>
     <p class="text-xs text-slate-300 leading-relaxed">Demo template generated locally by J.A.R.V.I.S. for "${safePrompt}".</p>
     <div class="flex space-x-2 pt-2">
-      <button onclick="this.textContent=' FEATURE ACTIVE'" class="px-4 py-2 bg-cyan-400 hover:bg-amber-400 text-black font-bold text-xs rounded transition"> LAUNCH FEATURE</button>
+      <span class="px-4 py-2 border border-slate-600 text-slate-300 text-xs">PREVIEW ONLY - NO DEPLOYMENT OR FEATURE BACKEND</span>
     </div>
   </div>
 </body>
@@ -4398,7 +4403,7 @@
         webdevEditor.value = customHtml;
         renderWebDevPreview();
       }
-      if (statusBadge) statusBadge.textContent = 'TEMPLATE PREVIEW READY';
+      if (statusBadge) statusBadge.textContent = 'LOCAL TEMPLATE PREVIEW READY';
       playHudSound('confirm');
       showToast(`Generated Template: ${p}`);
     }
@@ -4410,7 +4415,7 @@
         const inp = document.getElementById('ai-webdev-prompt');
         if (inp && inp.value.trim()) {
           generateAiWebsiteInStudio(inp.value.trim());
-          speakText(`Generated live interactive website for ${inp.value.trim()}.`);
+          speakText(`Created a local website template preview for ${inp.value.trim()}. It has not been published.`);
           inp.value = '';
         }
       });
@@ -4652,16 +4657,19 @@
 
     // --- LIVE CRYPTO & CURRENCY MARKET RADAR (KEYLESS PUBLIC REST API) ---
     async function fetchLiveMarketRadar(announceToast = false) {
-      let btcStr = '$88,420';
-      let ethStr = '$3,180';
-      let inrStr = '₹84.40';
+      let btcStr = 'NOT AVAILABLE';
+      let ethStr = 'NOT AVAILABLE';
+      let inrStr = 'NOT AVAILABLE';
+      let cryptoUpdated = false;
+      let fxUpdated = false;
 
       try {
         const cgRes = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd');
         if (cgRes.ok) {
           const cgData = await cgRes.json();
-          if (cgData?.bitcoin?.usd) btcStr = '$' + Number(cgData.bitcoin.usd).toLocaleString();
-          if (cgData?.ethereum?.usd) ethStr = '$' + Number(cgData.ethereum.usd).toLocaleString();
+          if (Number.isFinite(cgData?.bitcoin?.usd)) btcStr = '$' + Number(cgData.bitcoin.usd).toLocaleString();
+          if (Number.isFinite(cgData?.ethereum?.usd)) ethStr = '$' + Number(cgData.ethereum.usd).toLocaleString();
+          cryptoUpdated = btcStr !== 'NOT AVAILABLE' || ethStr !== 'NOT AVAILABLE';
         }
       } catch (e) {}
 
@@ -4669,7 +4677,7 @@
         const fxRes = await fetch('https://open.er-api.com/v6/latest/USD');
         if (fxRes.ok) {
           const fxData = await fxRes.json();
-          if (fxData?.rates?.INR) inrStr = '₹' + Number(fxData.rates.INR).toFixed(2);
+          if (Number.isFinite(fxData?.rates?.INR)) { inrStr = '₹' + Number(fxData.rates.INR).toFixed(2); fxUpdated = true; }
         }
       } catch (e) {}
 
@@ -4680,7 +4688,7 @@
       if (ethEl) ethEl.textContent = ethStr;
       if (inrEl) inrEl.textContent = inrStr;
 
-      if (announceToast) showToast('Live Crypto & FX Rates Synced!');
+      if (announceToast) showToast(cryptoUpdated || fxUpdated ? 'Available market rates refreshed. Unavailable fields are marked.' : 'Market data is currently unavailable.', cryptoUpdated || fxUpdated ? 'success' : 'error');
       return `Live Global Market Radar: Bitcoin is trading at ${btcStr}, Ethereum is at ${ethStr}, and the US Dollar to Indian Rupee exchange rate is ${inrStr}.`;
     }
     fetchLiveMarketRadar(false);
@@ -4777,7 +4785,7 @@
         bioOverlay.classList.add('flex');
       }
       if (bioStatus) bioStatus.textContent = 'LOCKED // DEMO MODE';
-      if (bioReadout) bioReadout.innerHTML = 'Demo only: this visual lock does not verify identity. No PIN or biometric authentication is configured.';
+      if (bioReadout) bioReadout.textContent = 'Demo only: this visual lock does not verify identity. No PIN or biometric authentication is configured.';
       speakText("Visual demo lock engaged. This does not authenticate identity.");
     }
 
