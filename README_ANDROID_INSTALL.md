@@ -41,7 +41,7 @@ The APK is generated at `android/app/build/outputs/apk/debug/app-debug.apk`. On 
 
 ## Option C — Use the web/PWA preview
 
-[Open the current audit preview](https://jarvis-1oa6whwst-ansh-0328.vercel.app)
+[Open the current audit preview](https://jarvis-ai-git-audit-jarvis-mark-vii-hardening-ansh-0328.vercel.app)
 
 For local development, serve the `www/` directory over localhost or HTTPS. Browser permissions such as microphone and geolocation depend on the browser and secure-context requirements. Some native Android actions are available only inside the Capacitor APK.
 
