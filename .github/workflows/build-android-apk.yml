@@ -2,8 +2,12 @@ name: Build J.A.R.V.I.S. Android APK
 
 on:
   push:
-    branches: [main]
+    branches: [main, audit/jarvis-mark-vii-hardening]
   workflow_dispatch:
+
+concurrency:
+  group: jarvis-android-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -30,6 +34,30 @@ jobs:
         run: |
           mkdir -p android/app/src/main/java/com/stark/jarvis/os
           cp android-template/src/main/java/com/stark/jarvis/os/*.java android/app/src/main/java/com/stark/jarvis/os/
+      - name: Validate JavaScript assets and HTML IDs
+        run: |
+          node --check www/app.js
+          node --check www/network-diagnostics.js
+          node --test tests/network-diagnostics.test.cjs
+          node <<'NODE'
+          const fs = require('node:fs');
+          const html = fs.readFileSync('www/index.html', 'utf8');
+          const ids = [...html.matchAll(/(?:^|\s)id=["']([^"']+)["']/g)]
+            .map(([, id]) => id)
+            .filter(id => !id.includes('$') && !id.includes('{'));
+          const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
+          if (duplicates.length) {
+            throw new Error('Duplicate static HTML IDs: ' + [...new Set(duplicates)].join(', '));
+          }
+          const app = fs.readFileSync('www/app.js', 'utf8');
+          const canvasIds = [...app.matchAll(/const\s+\w+\s*=\s*document\.getElementById\(['"]([^'"]+)['"]\);\s*\n\s*const\s+\w+\s*=\s*\w+\.getContext\(['"]2d['"]\);/g)]
+            .map(([, id]) => id);
+          const missingCanvases = canvasIds.filter(id => !ids.includes(id));
+          if (missingCanvases.length) {
+            throw new Error('Canvas initializers reference missing HTML IDs: ' + [...new Set(missingCanvases)].join(', '));
+          }
+          console.log('Validated www/app.js, ' + ids.length + ' static HTML IDs, and ' + canvasIds.length + ' canvas initializers.');
+          NODE
       - name: Sync Capacitor project
         run: npx cap sync android
       - name: Build debug APK

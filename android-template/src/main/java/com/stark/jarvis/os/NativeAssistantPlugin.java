@@ -1,7 +1,9 @@
 package com.stark.jarvis.os;
 
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.media.AudioAttributes;
+import android.net.Uri;
 import android.speech.tts.TextToSpeech;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
@@ -48,6 +50,117 @@ public class NativeAssistantPlugin extends Plugin {
         }
     }
 
+
+    @PluginMethod
+    public void openExternalApp(PluginCall call) {
+        String appName = call.getString("appName");
+        String nativeUri = call.getString("nativeUri");
+        String webUrl = call.getString("webUrl");
+
+        String target = nativeUri != null && !nativeUri.trim().isEmpty()
+            ? nativeUri.trim()
+            : (webUrl == null ? "" : webUrl.trim());
+        if (target.isEmpty()) {
+            call.reject("A launch URI is required.");
+            return;
+        }
+
+        getActivity().runOnUiThread(() -> {
+            try {
+                Uri targetUri = Uri.parse(target);
+                String scheme = targetUri.getScheme();
+                boolean nativeScheme = scheme != null
+                    && !scheme.equalsIgnoreCase("http")
+                    && !scheme.equalsIgnoreCase("https");
+
+                if (nativeScheme) {
+                    if (!isSupportedNativeScheme(scheme)) {
+                        call.reject("This app URI scheme is not allowed: " + scheme);
+                        return;
+                    }
+                    Intent nativeIntent = new Intent(Intent.ACTION_VIEW, targetUri);
+                    nativeIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    try {
+                        getActivity().startActivity(nativeIntent);
+                        JSObject result = new JSObject();
+                        result.put("status", "LAUNCHED_NATIVE");
+                        result.put("appName", appName == null ? "" : appName);
+                        result.put("scheme", scheme);
+                        call.resolve(result);
+                        return;
+                    } catch (ActivityNotFoundException notInstalled) {
+                        openPlayStoreSearch(call, appName);
+                        return;
+                    }
+                }
+
+                String browserTarget = webUrl != null && !webUrl.trim().isEmpty()
+                    ? webUrl.trim()
+                    : target;
+                Uri browserUri = Uri.parse(browserTarget);
+                if (!"https".equalsIgnoreCase(browserUri.getScheme())) {
+                    call.reject("Only HTTPS web destinations are allowed.");
+                    return;
+                }
+                Intent webIntent = new Intent(Intent.ACTION_VIEW, browserUri);
+                webIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                getActivity().startActivity(webIntent);
+                JSObject result = new JSObject();
+                result.put("status", "LINK_OPENED");
+                result.put("appName", appName == null ? "" : appName);
+                call.resolve(result);
+            } catch (ActivityNotFoundException error) {
+                openPlayStoreSearch(call, appName);
+            } catch (Exception error) {
+                call.reject("Unable to open " + (appName == null ? "the requested app" : appName)
+                    + ": " + error.getMessage());
+            }
+        });
+    }
+
+    private void openPlayStoreSearch(PluginCall call, String appName) {
+        if (appName == null || appName.trim().isEmpty()) {
+            call.reject("The requested app was not found and no app name was provided for store search.");
+            return;
+        }
+
+        String query = Uri.encode(appName.trim());
+        Uri marketUri = Uri.parse("market://search?q=" + query + "&c=apps");
+        try {
+            Intent marketIntent = new Intent(Intent.ACTION_VIEW, marketUri);
+            marketIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getActivity().startActivity(marketIntent);
+            JSObject result = new JSObject();
+            result.put("status", "STORE_OPENED");
+            result.put("appName", appName);
+            call.resolve(result);
+        } catch (ActivityNotFoundException noStoreApp) {
+            try {
+                Uri webStoreUri = Uri.parse("https://play.google.com/store/search?q=" + query + "&c=apps");
+                Intent webStoreIntent = new Intent(Intent.ACTION_VIEW, webStoreUri);
+                webStoreIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                getActivity().startActivity(webStoreIntent);
+                JSObject result = new JSObject();
+                result.put("status", "STORE_SEARCH_WEB_OPENED");
+                result.put("appName", appName);
+                call.resolve(result);
+            } catch (Exception error) {
+                call.reject("The app was not found and Play Store search could not be opened: " + error.getMessage());
+            }
+        }
+    }
+
+    private boolean isSupportedNativeScheme(String scheme) {
+        return scheme != null && (
+            scheme.equalsIgnoreCase("whatsapp") ||
+            scheme.equalsIgnoreCase("vnd.youtube") ||
+            scheme.equalsIgnoreCase("instagram") ||
+            scheme.equalsIgnoreCase("googlechrome") ||
+            scheme.equalsIgnoreCase("spotify") ||
+            scheme.equalsIgnoreCase("mailto")
+        );
+    }
+
     @PluginMethod
     public void speak(PluginCall call) {
         String text = call.getString("text");
@@ -71,11 +184,16 @@ public class NativeAssistantPlugin extends Plugin {
                         .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                         .build());
                     ttsReady = true;
-                    for (String queued : new ArrayList<>(pendingSpeech)) {
-                        textToSpeech.speak(queued, TextToSpeech.QUEUE_FLUSH, null,
-                            "jarvis-" + System.currentTimeMillis());
-                    }
+                    List<String> queuedSpeech = new ArrayList<>(pendingSpeech);
                     pendingSpeech.clear();
+                    for (int index = 0; index < queuedSpeech.size(); index++) {
+                        String queued = queuedSpeech.get(index);
+                        int queueMode = index == 0
+                            ? TextToSpeech.QUEUE_FLUSH
+                            : TextToSpeech.QUEUE_ADD;
+                        textToSpeech.speak(queued, queueMode, null,
+                            "jarvis-" + System.nanoTime() + "-" + index);
+                    }
                 } else {
                     pendingSpeech.clear();
                     ttsReady = false;
