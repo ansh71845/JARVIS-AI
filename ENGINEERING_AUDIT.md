@@ -81,3 +81,5 @@ No claim is made that all controls, Gemini flows, native permissions, or phone-s
 - CI can validate syntax, deterministic logic, and Android APK compilation; it cannot confirm Android GPS permission behavior or the device's real network/CORS path.
 - Run public IP lookup and the quick speed test on the target Android browser/device after deployment; verify mobile-data consent, slow-network timeout, offline state, IPv4, and IPv6 behavior.
 - Continue to keep PR #1 in draft until physical-device testing, control-by-control audit, and production API-key proxy/security review are complete.
+- Follow-up validation improvement: replaced the static Tomorrow/Sunday weather placeholders with two actual Open-Meteo daily forecast slots; forecasts show NOT REPORTED/UNAVAILABLE when the provider does not return the data.
+- The wireframe globe now plots the selected latitude/longitude on the visible hemisphere instead of drawing a fixed Surat marker. Its callout is explicitly described in code as approximate and not a street map.
