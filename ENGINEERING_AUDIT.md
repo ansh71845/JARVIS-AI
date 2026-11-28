@@ -53,3 +53,10 @@ No claim is made that all controls, Gemini flows, native permissions, or phone-s
 - **Website preview:** added an opaque-origin iframe sandbox (`sandbox="allow-scripts"`) and escaped prompt text before inserting it into generated HTML.
 - **Smart-home panel:** relabeled the local state-only controls as a simulator rather than implying connected physical devices.
 - **Android transport:** disabled cleartext HTTP traffic in the native manifest and its embedded template copy.
+
+## Follow-up: startup and HTML-injection fixes (28 November 2026)
+- **Confirmed startup blocker:** the performance pass removed the network sparkline canvas, but stale JavaScript still called `getContext('2d')` on the missing element. Removed the unused canvas initialization. The network throughput widget remains explicitly unavailable rather than fabricating telemetry.
+- **HTML injection hardening:** escaped user-controlled WhatsApp preview text, uploaded document filenames, and timer labels before inserting them into HTML.
+- **CI regression guard:** added a static check that every canvas initialized through `getElementById(...).getContext('2d')` exists in the page markup.
+- **Validation status:** JavaScript/HTML ID validation passed on commit `af9a0fe`; the Android build for the later security-fix commit `03fa128` was still running at audit time. The newest workflow after the CI regression guard must complete before this pass is called green.
+- **Remaining:** no physical Android runtime test, no exhaustive end-to-end verification of all 224 currently declared buttons, no Lighthouse run, and no production backend proxy for Gemini credentials. The Worker-based code runner is isolated from the page DOM and receives no API key, but it is not a hardened security boundary against all network-capable code.
