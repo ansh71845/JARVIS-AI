@@ -1721,8 +1721,8 @@
         state.isProcessing = false;
         openHubModal('agents');
         const mission = q.replace(/^(hey jarvis|jarvis)?\s*(deploy|run|launch|open|start)?\s*(autonomous|multi-agent|ai)?\s*(agent swarm|agents)\s*(for|on|to)?\s*/i, '').trim() || 'Quantum Neural OS Architecture';
-        if (typeof runAutonomousAgentSwarm === 'function') {
-          runAutonomousAgentSwarm(mission);
+        if (typeof createLocalWorkflowPreview === 'function') {
+          createLocalWorkflowPreview(mission);
         }
         return;
       }
@@ -1732,8 +1732,8 @@
         state.isProcessing = false;
         openHubModal('webdev');
         const promptTopic = q.replace(/^(hey jarvis|jarvis)?\s*(build|create|generate|make|open)\s*(a|an)?\s*(website|web app|webpage|web dev|site)\s*(for|about)?\s*/i, '').trim() || 'Sci-Fi AI Command Portfolio';
-        if (typeof generateAiWebsiteInStudio === 'function') {
-          generateAiWebsiteInStudio(promptTopic);
+        if (typeof createWebsiteTemplatePreview === 'function') {
+          createWebsiteTemplatePreview(promptTopic);
         }
         const reply = `Opening Autonomous AI Web Development Studio and generating a live interactive website for: ${promptTopic}.`;
         appendMessage('J.A.R.V.I.S.', reply, { source: 'AI WEB DEV STUDIO' });
@@ -4335,11 +4335,11 @@
       runWebdevBtn.addEventListener('click', () => {
         renderWebDevPreview();
         playHudSound('confirm');
-        showToast('Live Website Preview Updated!');
+        showToast('Local website template preview updated.');
       });
     }
 
-    function generateAiWebsiteInStudio(promptText) {
+    function createWebsiteTemplatePreview(promptText) {
       const p = promptText.trim() || 'Futuristic AI App';
       const safePrompt = p.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
       const statusBadge = document.getElementById('webdev-status-badge');
@@ -4371,7 +4371,7 @@
       }
       if (statusBadge) statusBadge.textContent = 'LOCAL TEMPLATE PREVIEW READY';
       playHudSound('confirm');
-      showToast(`Generated Template: ${p}`);
+      showToast(`Created local template preview: ${p}`);
     }
 
     const aiWebdevForm = document.getElementById('ai-webdev-form');
@@ -4380,7 +4380,7 @@
         e.preventDefault();
         const inp = document.getElementById('ai-webdev-prompt');
         if (inp && inp.value.trim()) {
-          generateAiWebsiteInStudio(inp.value.trim());
+          createWebsiteTemplatePreview(inp.value.trim());
           speakText(`Created a local website template preview for ${inp.value.trim()}. It has not been published.`);
           inp.value = '';
         }
@@ -4408,12 +4408,12 @@
     // =========================================================================
     // STEP 14: AUTONOMOUS MULTI-AGENT AI SWARM CONTROLLER
     // =========================================================================
-    function runAutonomousAgentSwarm(missionTopic) {
+    function createLocalWorkflowPreview(missionTopic) {
       const topic = String(missionTopic || '').trim();
       if (!topic) { showToast('Enter a workflow topic first.', 'error'); return; }
       const badge = document.getElementById('swarm-status-badge');
       const output = document.getElementById('swarm-master-output');
-      if (typeof generateAiWebsiteInStudio === 'function') generateAiWebsiteInStudio(topic);
+      if (typeof createWebsiteTemplatePreview === 'function') createWebsiteTemplatePreview(topic);
       const report = `This build does not run independent AI agents. It created a local template preview for "${topic}". No external research, security audit, or deployment was performed.`;
       if (badge) { badge.textContent = 'LOCAL PREVIEW ONLY'; badge.className = 'px-2.5 py-0.5 bg-slate-800 border border-cyan-500/40 text-cyan-200 text-[10px] font-bold'; }
       if (output) output.textContent = report;
@@ -4429,7 +4429,7 @@
         const val = inp ? inp.value.trim() : '';
         if (val) {
           inp.value = '';
-          runAutonomousAgentSwarm(val);
+          createLocalWorkflowPreview(val);
         }
       });
     }
@@ -5721,12 +5721,11 @@
 
     // 7. OPENCLAW MEMORY TIMELINE (TODAY / YESTERDAY COLLAPSIBLE DAYS) + SCHEDULE CRON + SKILLS BROWSER
     let openClawMemories = [];
-    let showArchivedMemories = false;
 
     function renderOpenClawMemoryTimeline() {
       const box = document.getElementById('openclaw-memory-timeline');
       if (!box) return;
-      const days = showArchivedMemories ? ['TODAY', 'YESTERDAY', 'ARCHIVE // 2026-11'] : ['TODAY', 'YESTERDAY'];
+      const days = ['TODAY'];
       box.innerHTML = days.map(day => {
         const items = openClawMemories.filter(m => m.day === day);
         return `
@@ -5759,20 +5758,10 @@
           detail: `Logged at ${new Date().toLocaleTimeString()} via OpenClaw Memory Timeline.`
         });
         renderOpenClawMemoryTimeline();
-        speakText('Topic logged to OpenClaw Memory Timeline.');
+        speakText('Topic logged for this session only. It is cleared when you reload the app.');
       });
     }
-    const moreMemBtn = document.getElementById('openclaw-memory-more-btn');
-    if (moreMemBtn) {
-      moreMemBtn.addEventListener('click', () => {
-        showArchivedMemories = !showArchivedMemories;
-        moreMemBtn.textContent = showArchivedMemories ? 'HIDE ARCHIVED DAYS ▴' : 'SHOW MORE ARCHIVED DAYS ▾';
-        renderOpenClawMemoryTimeline();
-      });
-    }
-
-    // OpenClaw Cron Jobs with Enable/Disable Switches
-    // This panel stores local workflow shortcuts only; it is not a background scheduler.
+    // Local workflow shortcuts with manual run controls. No background scheduler is configured.
     let openClawCronJobs = [];
 
     function renderOpenClawCronList() {
@@ -5800,7 +5789,7 @@
           if (job) {
             job.enabled = !job.enabled;
             renderOpenClawCronList();
-            speakText(`Cron job ${escapeHTML(job.name)} is now ${job.enabled ? 'enabled' : 'disabled'}.`);
+            speakText(`Local workflow shortcut ${escapeHTML(job.name)} is now ${job.enabled ? 'enabled' : 'disabled'}.`);
           }
         });
       });
@@ -5809,8 +5798,10 @@
         btn.addEventListener('click', () => {
           const id = Number(btn.getAttribute('data-runcron'));
           const job = openClawCronJobs.find(j => j.id === id);
-          if (job) {
+          if (job?.enabled) {
             processCommand(job.cmd);
+          } else if (job) {
+            showToast('This shortcut is disabled. Turn it ON before running.', 'error');
           }
         });
       });
@@ -5827,7 +5818,6 @@
         openClawCronJobs.unshift({
           id: Date.now(),
           name,
-          schedule: '*/15 * * * *',
           enabled: true,
           cmd: name
         });
@@ -5838,32 +5828,32 @@
     }
 
     // OpenClaw Skills Browser
-    const openClawInstalledSkills = [
-      { name: 'openclaw-jarvis-ui', scope: 'WORKSPACE', desc: 'Three.js 3D Orb, 3-Layer Audio Viz, 6-Color Hue & Cron HUD', action: () => switchCenterCoreMode('orb3d') },
-      { name: 'archer-voice-assistant', scope: 'WORKSPACE', desc: 'Up/Down History, Multi-Timers, City Weather & Inline Calculator', action: () => createArcherCountdownTimer(30, 'Skill Test Timer') },
-      { name: 'github-repo-coder', scope: 'USER SKILL', desc: 'Inspects and integrates external GitHub repositories into workspace', action: () => openHubModal('webdev') },
-      { name: 'optical-vision-hud', scope: 'SYSTEM', desc: 'WebRTC Live Camera HUD & Hand Air-Tap Gesture Detector', action: () => openHubModal('vision') },
-      { name: 'neural-memory-rag', scope: 'SYSTEM', desc: 'Persistent Vector Fact Vault & Live JS Sandbox Executor', action: () => openHubModal('neuralmem') },
-      { name: 'real-io-clipboard-share', scope: 'SYSTEM', desc: 'Verified Clipboard Copy, File Share Sheet & Raw Inspector Drawer', action: () => realCopyTextToClipboard('J.A.R.V.I.S. OpenClaw Skill Verification OK', 'SKILL TEST') }
+    const openClawWorkspaceModules = [
+      { name: '3D ORB VISUALIZER', scope: 'LOCAL MODULE', desc: 'Opens the built-in interactive 3D orb display.', action: () => switchCenterCoreMode('orb3d') },
+      { name: 'COUNTDOWN TIMER', scope: 'LOCAL MODULE', desc: 'Creates a local 30-second countdown timer.', action: () => createArcherCountdownTimer(30, 'Quick Timer') },
+      { name: 'WEBSITE TEMPLATE STUDIO', scope: 'LOCAL MODULE', desc: 'Opens the local HTML template editor; it does not connect to GitHub.', action: () => openHubModal('webdev') },
+      { name: 'CAMERA & RADAR DEMO', scope: 'LOCAL MODULE', desc: 'Opens the camera/radar panel; camera access depends on browser permission.', action: () => openHubModal('vision') },
+      { name: 'LOCAL MEMORY & CODE TOOLS', scope: 'LOCAL MODULE', desc: 'Opens session notes and the worker-based code runner; no vector database is configured.', action: () => openHubModal('neuralmem') },
+      { name: 'CLIPBOARD & FILE SHARE', scope: 'LOCAL MODULE', desc: 'Copies a test string and opens the device share workflow.', action: () => realCopyTextToClipboard('J.A.R.V.I.S. local clipboard test', 'LOCAL MODULE TEST') }
     ];
 
     function renderOpenClawSkills() {
       const box = document.getElementById('openclaw-skills-list');
       if (!box) return;
-      box.innerHTML = openClawInstalledSkills.map((sk, idx) => `
+      box.innerHTML = openClawWorkspaceModules.map((sk, idx) => `
         <div class="p-1.5 bg-black/80 border border-cyan-500/30 rounded flex items-center justify-between gap-2">
           <div class="truncate">
-            <div class="text-[10px] font-bold text-cyan-300 truncate"> ${sk.name} <span class="text-[8px] px-1 bg-emerald-950 text-emerald-300 rounded">${sk.scope}</span></div>
-            <div class="text-[9px] text-slate-400 truncate">${sk.desc}</div>
+            <div class="text-[10px] font-bold text-cyan-300 truncate"> ${escapeHTML(sk.name)} <span class="text-[8px] px-1 bg-slate-800 text-slate-300">${escapeHTML(sk.scope)}</span></div>
+            <div class="text-[9px] text-slate-400 truncate">${escapeHTML(sk.desc)}</div>
           </div>
-          <button type="button" data-runskill="${idx}" class="px-2 py-0.5 bg-emerald-500/20 border border-emerald-400 text-emerald-300 hover:bg-emerald-400 hover:text-black font-bold text-[9px] rounded shrink-0">LAUNCH</button>
+          <button type="button" data-runskill="${idx}" class="px-2 py-0.5 bg-emerald-500/20 border border-emerald-400 text-emerald-300 hover:bg-emerald-400 hover:text-black font-bold text-[9px] rounded shrink-0">OPEN</button>
         </div>
       `).join('');
 
       box.querySelectorAll('[data-runskill]').forEach(btn => {
         btn.addEventListener('click', () => {
           const idx = Number(btn.getAttribute('data-runskill'));
-          if (openClawInstalledSkills[idx]?.action) openClawInstalledSkills[idx].action();
+          if (openClawWorkspaceModules[idx]?.action) openClawWorkspaceModules[idx].action();
         });
       });
     }
