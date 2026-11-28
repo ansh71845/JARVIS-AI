@@ -1087,8 +1087,8 @@ img,canvas,iframe,video,svg{max-width:100%}input,select,textarea,button{max-widt
       <div class="flex space-x-1.5 border-b border-cyan-500/20 pb-2 mb-3 font-mono-hud text-xs flex-wrap">
         <button data-tab="smarthome" class="hub-tab-btn px-3 py-1.5 bg-cyan-400 text-black font-bold"> SMART ENV &amp; FOCUS</button><button data-tab="aistudio" class="hub-tab-btn hidden"> GOOGLE AI STUDIO BRIDGE</button>
         <button data-tab="filelab" class="hub-tab-btn px-3 py-1.5 bg-slate-900 border border-cyan-500/30 text-emerald-300 font-bold"> AI FILE &amp; FINANCE LAB</button>
-        <button data-tab="agents" class="hub-tab-btn px-3 py-1.5 bg-slate-900 border border-cyan-500/30 text-amber-300 font-bold"> AI AGENT SWARM</button>
-        <button data-tab="webdev" class="hub-tab-btn px-3 py-1.5 bg-slate-900 border border-cyan-500/30 text-cyan-300 font-bold"> AI WEB DEV STUDIO</button>
+        <button data-tab="agents" class="hub-tab-btn px-3 py-1.5 bg-slate-900 border border-cyan-500/30 text-amber-300 font-bold"> LOCAL WORKFLOW PREVIEW</button>
+        <button data-tab="webdev" class="hub-tab-btn px-3 py-1.5 bg-slate-900 border border-cyan-500/30 text-cyan-300 font-bold"> WEBSITE TEMPLATE STUDIO</button>
         <button data-tab="phone" class="hub-tab-btn px-3 py-1.5 bg-emerald-500 text-black font-bold"> PHONE &amp; CALLS</button>
         <button data-tab="enjoy" class="hub-tab-btn px-3 py-1.5 bg-slate-900 border border-cyan-500/30 text-amber-300 font-bold"> ENJOYING ZONE</button>
         <button data-tab="calendar" class="hub-tab-btn px-3 py-1.5 bg-slate-900 border border-cyan-500/30 text-cyan-300"> CALENDAR EVENTS</button>
@@ -1642,19 +1642,19 @@ return `Total Repulsor Thrust: ${thrust} kN | Location: ${state.location.city}`;
         <div class="p-3 bg-black/90 border border-cyan-400/50 space-y-2.5">
           <div class="flex flex-wrap items-center justify-between gap-2 border-b border-cyan-500/30 pb-2">
             <div>
-              <div class="font-display-hud text-sm text-cyan-300 font-bold"> J.A.R.V.I.S. AUTONOMOUS AI WEB DEVELOPMENT STUDIO</div>
-              <div class="text-[10px] text-slate-400">Describe any website, landing page, calculator, or game - or click a template below - to generate, preview, edit, and export live HTML/CSS/JS!</div>
+              <div class="font-display-hud text-sm text-cyan-300 font-bold"> J.A.R.V.I.S. WEBSITE TEMPLATE STUDIO</div>
+              <div class="text-[10px] text-slate-400">Create a local starter HTML template, preview it, edit the code, and export the file. This panel does not call an AI service or deploy a website.</div>
             </div>
             <button type="button" id="export-webapp-btn" class="px-3 py-1.5 bg-amber-400 hover:bg-cyan-400 text-black font-display-hud font-bold text-[10px] rounded">
-              ⬇ EXPORT GENERATED SITE (.HTML)
+              ⬇ EXPORT LOCAL TEMPLATE (.HTML)
             </button>
           </div>
 
           <!-- AI Prompt Generator Bar -->
           <form id="ai-webdev-form" class="flex flex-wrap sm:flex-nowrap gap-2">
-            <input type="text" id="ai-webdev-prompt" placeholder="Prompt AI Builder (e.g. 'Build a Cyberpunk Portfolio Website', 'Crypto Dashboard', 'Neon Calculator')..." class="flex-1 px-3 py-2 bg-slate-950 border border-cyan-500/50 text-cyan-100 text-xs focus:outline-none rounded">
+            <input type="text" id="ai-webdev-prompt" placeholder="Describe a starter site (portfolio, dashboard, calculator...)" class="flex-1 px-3 py-2 bg-slate-950 border border-cyan-500/50 text-cyan-100 text-xs focus:outline-none rounded">
             <button type="submit" class="px-4 py-2 bg-cyan-400 hover:bg-amber-400 text-black font-display-hud font-bold text-xs rounded uppercase shrink-0">
-               GENERATE WEBSITE
+               CREATE TEMPLATE PREVIEW
             </button>
           </form>
 
@@ -1677,8 +1677,8 @@ return `Total Repulsor Thrust: ${thrust} kN | Location: ${state.location.city}`;
             </div>
             <div class="lg:col-span-7 flex flex-col space-y-1">
               <div class="text-[10px] text-cyan-300 flex justify-between">
-                <span>LIVE INTERACTIVE WEBSITE PREVIEW</span>
-                <span id="webdev-status-badge" class="text-emerald-400">RENDERED 60FPS</span>
+                <span>LOCAL WEBSITE TEMPLATE PREVIEW</span>
+                <span id="webdev-status-badge" class="text-emerald-400">LOCAL PREVIEW</span>
               </div>
               <iframe id="webdev-preview-iframe" title="Isolated website preview" sandbox="allow-scripts" referrerpolicy="no-referrer" loading="lazy" class="w-full h-60 bg-slate-950 border border-cyan-400/50 rounded"></iframe>
             </div>
@@ -1691,62 +1691,42 @@ return `Total Repulsor Thrust: ${thrust} kN | Location: ${state.location.city}`;
         <div class="p-3 bg-black/90 border border-amber-400/50 space-y-3">
           <div class="flex flex-wrap items-center justify-between gap-2 border-b border-cyan-500/30 pb-2">
             <div>
-              <div class="font-display-hud text-sm text-amber-300 font-bold"> J.A.R.V.I.S. AUTONOMOUS MULTI-AGENT SWARM MATRIX</div>
-              <div class="text-[10px] text-slate-400">Deploy 4 specialized AI sub-agents in parallel to research, architect code, audit security, and synthesize voice briefings!</div>
+              <div class="font-display-hud text-sm text-amber-300 font-bold"> J.A.R.V.I.S. LOCAL WORKFLOW PREVIEW</div>
+              <div class="text-[10px] text-slate-400">Create a local starter-page preview for a workflow topic. This build does not run AI agents, external research, security audits, or deployments.</div>
             </div>
-            <span id="swarm-status-badge" class="px-2.5 py-0.5 bg-emerald-950 border border-emerald-400 text-emerald-300 text-[10px] font-bold">4 AGENTS STANDBY</span>
+            <span id="swarm-status-badge" class="px-2.5 py-0.5 bg-emerald-950 border border-emerald-400 text-emerald-300 text-[10px] font-bold">LOCAL PREVIEW ONLY</span>
           </div>
 
           <!-- Mission Input Form -->
           <form id="agent-swarm-form" class="flex flex-wrap sm:flex-nowrap gap-2">
-            <input type="text" id="agent-mission-input" placeholder="Enter Complex Mission (e.g. 'Design a Quantum AI Startup & Full-Stack App', 'Plan Global Product Launch')..." class="flex-1 px-3 py-2 bg-slate-950 border border-amber-500/50 text-cyan-100 text-xs rounded focus:outline-none">
+            <input type="text" id="agent-mission-input" placeholder="Describe a workflow or starter site to preview..." class="flex-1 px-3 py-2 bg-slate-950 border border-amber-500/50 text-cyan-100 text-xs rounded focus:outline-none">
             <button type="submit" class="px-4 py-2 bg-amber-400 hover:bg-cyan-400 text-black font-display-hud font-bold text-xs rounded uppercase shrink-0">
-               DEPLOY AGENT SWARM
+               CREATE LOCAL PREVIEW
             </button>
           </form>
 
-          <!-- 4 Live Autonomous Agent Status Cards -->
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-            <div class="p-2.5 bg-slate-950 border border-cyan-500/40 rounded space-y-1">
-              <div class="flex justify-between items-center">
-                <span class="text-cyan-300 font-bold"> AGENT 01 // RESEARCH</span>
-                <span id="ag1-state" class="text-[9px] text-emerald-400">READY</span>
-              </div>
-              <div class="w-full bg-slate-900 h-1 rounded overflow-hidden"><div id="ag1-bar" class="bg-cyan-400 h-full w-full transition-all duration-300"></div></div>
-              <div id="ag1-log" class="text-[10px] text-slate-400 leading-snug">Scans live knowledge nodes &amp; technical specs.</div>
+            <div class="p-2.5 bg-slate-950 border border-cyan-500/40 space-y-1">
+              <div class="text-cyan-300 font-bold">STEP 01 // TOPIC</div>
+              <div class="text-[10px] text-slate-400">Capture the topic entered in the form.</div>
             </div>
-
-            <div class="p-2.5 bg-slate-950 border border-amber-500/40 rounded space-y-1">
-              <div class="flex justify-between items-center">
-                <span class="text-amber-300 font-bold"> AGENT 02 // CODE DEV</span>
-                <span id="ag2-state" class="text-[9px] text-emerald-400">READY</span>
-              </div>
-              <div class="w-full bg-slate-900 h-1 rounded overflow-hidden"><div id="ag2-bar" class="bg-amber-400 h-full w-full transition-all duration-300"></div></div>
-              <div id="ag2-log" class="text-[10px] text-slate-400 leading-snug">Synthesizes architecture &amp; pushes to Web Dev Studio.</div>
+            <div class="p-2.5 bg-slate-950 border border-amber-500/40 space-y-1">
+              <div class="text-amber-300 font-bold">STEP 02 // TEMPLATE</div>
+              <div class="text-[10px] text-slate-400">Create a fixed local starter-page template.</div>
             </div>
-
-            <div class="p-2.5 bg-slate-950 border border-rose-500/40 rounded space-y-1">
-              <div class="flex justify-between items-center">
-                <span class="text-rose-300 font-bold"> AGENT 03 // SEC-OPS</span>
-                <span id="ag3-state" class="text-[9px] text-emerald-400">READY</span>
-              </div>
-              <div class="w-full bg-slate-900 h-1 rounded overflow-hidden"><div id="ag3-bar" class="bg-rose-500 h-full w-full transition-all duration-300"></div></div>
-              <div id="ag3-log" class="text-[10px] text-slate-400 leading-snug">Audits encryption, zero-leak keys &amp; threat surface.</div>
+            <div class="p-2.5 bg-slate-950 border border-rose-500/40 space-y-1">
+              <div class="text-rose-300 font-bold">STEP 03 // REVIEW</div>
+              <div class="text-[10px] text-slate-400">Review and edit the HTML yourself; no audit is performed.</div>
             </div>
-
-            <div class="p-2.5 bg-slate-950 border border-emerald-500/40 rounded space-y-1">
-              <div class="flex justify-between items-center">
-                <span class="text-emerald-300 font-bold"> AGENT 04 // DIRECTOR</span>
-                <span id="ag4-state" class="text-[9px] text-emerald-400">READY</span>
-              </div>
-              <div class="w-full bg-slate-900 h-1 rounded overflow-hidden"><div id="ag4-bar" class="bg-emerald-400 h-full w-full transition-all duration-300"></div></div>
-              <div id="ag4-log" class="text-[10px] text-slate-400 leading-snug">Compiles master verdict &amp; speaks executive report.</div>
+            <div class="p-2.5 bg-slate-950 border border-emerald-500/40 space-y-1">
+              <div class="text-emerald-300 font-bold">STEP 04 // EXPORT</div>
+              <div class="text-[10px] text-slate-400">Export the file manually. No hosting target is connected.</div>
             </div>
           </div>
 
           <!-- Master Swarm Synthesis Output -->
           <div id="swarm-master-output" class="p-3 bg-slate-950 border border-cyan-400/50 rounded text-xs text-cyan-100 leading-relaxed">
-            Enter a mission above and click <strong> DEPLOY AGENT SWARM</strong> (or say <em>"Deploy agent swarm for Quantum AI"</em>) to watch all 4 autonomous agents execute in parallel and speak the synthesized briefing aloud!
+            Enter a topic and click <strong>CREATE LOCAL PREVIEW</strong>. This creates a starter-page template only; it does not execute agents, research, security checks, or deployment.
           </div>
         </div>
       </div>
@@ -1997,31 +1977,31 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
             <!-- Left 4 Cols: OpenClaw Memory Timeline (Collapsible TODAY / YESTERDAY + ## Topics) -->
             <div class="lg:col-span-4 p-3 bg-slate-950/90 border border-cyan-500/35 rounded-lg flex flex-col justify-between space-y-2.5">
               <div class="flex items-center justify-between border-b border-cyan-500/25 pb-1.5">
-                <span class="font-display-hud text-cyan-300 font-bold text-xs"> MEMORY TIMELINE</span>
+                <span class="font-display-hud text-cyan-300 font-bold text-xs"> SESSION MEMORY TIMELINE</span>
+                <span class="text-[9px] text-slate-400">SESSION ONLY - CLEARED ON RELOAD</span>
                 <button type="button" id="openclaw-add-mem-btn" class="px-2 py-0.5 bg-cyan-500 text-black font-bold text-[10px] rounded">+ LOG TOPIC</button>
               </div>
               <div id="openclaw-memory-timeline" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
-              <button type="button" id="openclaw-memory-more-btn" class="w-full py-1 bg-slate-900 hover:bg-cyan-950 border border-cyan-500/30 text-cyan-300 text-[10px] rounded">SHOW MORE ARCHIVED DAYS ▾</button>
             </div>
 
             <!-- Center 4 Cols: OpenClaw Schedule Panel (Heartbeat + Toggleable Cron Jobs) -->
             <div class="lg:col-span-4 p-3 bg-slate-950/90 border border-amber-500/35 rounded-lg flex flex-col justify-between space-y-2.5">
               <div class="flex items-center justify-between border-b border-amber-500/25 pb-1.5">
                 <span class="font-display-hud text-amber-300 font-bold text-xs"> LOCAL WORKFLOW SHORTCUTS</span>
-                <span id="openclaw-heartbeat-badge" class="px-2 py-0.5 bg-emerald-950 border border-emerald-400 text-emerald-300 text-[9px] rounded animate-pulse"> BEAT: 60s OK</span>
+                <span id="openclaw-heartbeat-badge" class="px-2 py-0.5 bg-slate-900 border border-slate-600 text-slate-300 text-[9px]">SESSION ONLY</span>
               </div>
               <div id="openclaw-cron-list" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
               <form id="openclaw-add-cron-form" class="flex space-x-1.5 pt-1 border-t border-slate-800">
-                <input type="text" id="openclaw-cron-name" placeholder="New Cron Task (e.g. Every 15m Sync)..." required class="flex-1 px-2 py-1 bg-black border border-amber-500/40 text-white text-[11px] rounded focus:outline-none">
-                <button type="submit" class="px-2.5 py-1 bg-amber-400 text-black font-bold text-[10px] rounded">+ CRON</button>
+                <input type="text" id="openclaw-cron-name" placeholder="Shortcut name or command (manual run only)..." required class="flex-1 px-2 py-1 bg-black border border-amber-500/40 text-white text-[11px] rounded focus:outline-none">
+                <button type="submit" class="px-2.5 py-1 bg-amber-400 text-black font-bold text-[10px] rounded">+ SHORTCUT</button>
               </form>
             </div>
 
             <!-- Right 4 Cols: OpenClaw Skills Browser + Archer Multi-Timer & System Telemetry -->
             <div class="lg:col-span-4 p-3 bg-slate-950/90 border border-emerald-500/35 rounded-lg flex flex-col justify-between space-y-2.5">
               <div class="flex items-center justify-between border-b border-emerald-500/25 pb-1.5">
-                <span class="font-display-hud text-emerald-300 font-bold text-xs"> AGENT SKILLS &amp; TIMERS</span>
-                <span class="text-[9px] text-cyan-300">6 INSTALLED</span>
+                <span class="font-display-hud text-emerald-300 font-bold text-xs"> LOCAL MODULES &amp; TIMERS</span>
+                <span class="text-[9px] text-cyan-300">6 LOCAL SHORTCUTS</span>
               </div>
               <div id="openclaw-skills-list" class="space-y-1.5 max-h-36 overflow-y-auto pr-1"></div>
 
