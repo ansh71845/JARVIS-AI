@@ -60,3 +60,24 @@ No claim is made that all controls, Gemini flows, native permissions, or phone-s
 - **CI regression guard:** added a static check that every canvas initialized through `getElementById(...).getContext('2d')` exists in the page markup.
 - **Validation status:** JavaScript/HTML ID validation passed on commit `af9a0fe`; the Android build for the later security-fix commit `03fa128` was still running at audit time. The newest workflow after the CI regression guard must complete before this pass is called green.
 - **Remaining:** no physical Android runtime test, no exhaustive end-to-end verification of all 224 currently declared buttons, no Lighthouse run, and no production backend proxy for Gemini credentials. The Worker-based code runner is isolated from the page DOM and receives no API key, but it is not a hardened security boundary against all network-capable code.
+
+## Network, privacy, and location diagnostics pass — 28 November 2026
+- Added a separate, testable network diagnostics module. Public WAN IP lookup is opt-in through ipify, validated as IPv4/IPv6, not stored, and hidden again on user action. The app does not attempt WebRTC-based private/LAN IP discovery.
+- Added an opt-in quick transfer test using Cloudflare's documented download/upload endpoints: about 1 MiB downloaded and 256 KiB uploaded. The app reports measured bytes and elapsed time as approximate Mbps; it does not persist results. Browser/API/CORS failures remain visible as failures.
+- Added Network Information API readouts only as estimates (effective connection type, estimated downlink, and estimated RTT); unsupported browser fields remain NOT REPORTED.
+- Removed the hardcoded Surat GPS fallback. Page load restores only a previously selected manual city; GPS is requested only after a button tap and an explicit disclosure. Denial, timeout, and unavailable GPS no longer report a false successful location.
+- Fixed latitude/longitude hemisphere display (N/S and E/W), displays GPS accuracy where supplied, and keeps GPS coordinates session-only. Updated Open-Meteo reads for current temperature, humidity, wind, and weather code; removed static weather values that were not being fetched.
+- Added Node built-in tests for address validation, throughput math, Network Information API estimates, IP-provider response validation, transfer measurement, and request failure. CI now runs the tests and syntax-checks the new module.
+- Privacy disclosure covers the IP lookup provider, Cloudflare measurement traffic, location permissions, and third-party coordinate processing.
+
+### Coordinated workstreams
+1. Network engineering — public WAN lookup, real transfer measurement, and estimate labeling.
+2. Geolocation engineering — consent, permission errors, manual-city restore, and coordinate formatting.
+3. Privacy/security review — no background lookups, no LAN-IP probing, no persistent IP/speed results, provider disclosures.
+4. Frontend/product — opt-in controls, honest status messages, and removal of unverified weather readouts.
+5. QA/release — Node unit tests, source checks, GitHub Actions Android build, and explicit remaining device-test gates.
+
+### Remaining release gates
+- CI can validate syntax, deterministic logic, and Android APK compilation; it cannot confirm Android GPS permission behavior or the device's real network/CORS path.
+- Run public IP lookup and the quick speed test on the target Android browser/device after deployment; verify mobile-data consent, slow-network timeout, offline state, IPv4, and IPv6 behavior.
+- Continue to keep PR #1 in draft until physical-device testing, control-by-control audit, and production API-key proxy/security review are complete.
