@@ -48,7 +48,7 @@ jobs:
             throw new Error('Duplicate static HTML IDs: ' + [...new Set(duplicates)].join(', '));
           }
           const app = fs.readFileSync('www/app.js', 'utf8');
-          const canvasIds = [...app.matchAll(/const\\s+\\w+\\s*=\\s*document\\.getElementById\\(['"]([^'"]+)['"]\\);\\s*\\n\\s*const\\s+\\w+\\s*=\\s*\\w+\\.getContext\\(['"]2d['"]\\);/g)]
+          const canvasIds = [...app.matchAll(/const\s+\w+\s*=\s*document\.getElementById\(['"]([^'"]+)['"]\);\s*\n\s*const\s+\w+\s*=\s*\w+\.getContext\(['"]2d['"]\);/g)]
             .map(([, id]) => id);
           const missingCanvases = canvasIds.filter(id => !ids.includes(id));
           if (missingCanvases.length) {
