@@ -14,7 +14,7 @@ This file contains suggested public-facing text for the repository owner to revi
 
 Use the current preview URL only while the project is in preview:
 
-https://jarvis-ai-git-audit-jarvis-mark-vii-hardening-ansh-0328.vercel.app
+https://jarvis-1oa6whwst-ansh-0328.vercel.app
 
 Do not label this as a production website until a production deployment and domain are confirmed.
 
