@@ -1776,9 +1776,7 @@ return `Total Repulsor Thrust: ${thrust} kN | Location: ${state.location.city}`;
             </div>
 
             <div class="flex justify-between items-center pt-1">
-              <button type="button" id="demo-file-scan-btn" class="px-3 py-1.5 bg-cyan-500 hover:bg-amber-400 text-black font-display-hud font-bold text-[10px] rounded">
-                 RUN DEMO TELEMETRY SCAN
-              </button>
+              
               <button type="button" id="speak-scan-btn" class="px-3 py-1.5 bg-slate-900 border border-cyan-400 text-cyan-300 hover:bg-cyan-400 hover:text-black font-bold text-[10px] rounded">
                  SPEAK ANALYSIS
               </button>
@@ -2235,31 +2233,35 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
     // =========================================================================
     // PERSISTENT APPLICATION STATE (LOCALSTORAGE WRAPPED IN TRY/CATCH)
     // =========================================================================
-    const defaultApps = {
-      calendar: [
-        { id: 1, time: "11:30", title: "Stark R&D Propulsion Telemetry Review", status: "SYNCED" },
-        { id: 2, time: "15:00", title: "Global Defense Satellite Sync", status: "UPCOMING" },
-        { id: 3, time: "20:30", title: "Mark VII Arc Reactor Harmonic Calibration", status: "SCHEDULED" }
-      ],
-      emails: [
-        { id: 1, from: "Pepper Potts", subject: "Stark Clean Energy Grid Deployment Sign-off", unread: true },
-        { id: 2, from: "Dr. Bruce Banner", subject: "Gamma Spectrometer Telemetry Calibration", unread: true },
-        { id: 3, from: "Nick Fury // S.H.I.E.L.D.", subject: "Helicarrier Orbital Uplink Coordinates", unread: true }
-      ],
-      tasks: [
-        { id: 1, text: "Upgrade HUD to High-Density Stark CAD", done: true },
-        { id: 2, text: "Isolate Frontend API Keys in RAM Vault", done: true },
-        { id: 3, text: "Test Interactive Connected App Workspace", done: false }
-      ],
-      notes: "PROJECT J.A.R.V.I.S. // LAB TELEMETRY NOTES:\n- Arc Reactor output steady at 3.2 GJ/s.\n- Secondary orbital uplink calibrated to Surat 21.17°N, 72.83°E."
-    };
+    const defaultApps = { calendar: [], emails: [], tasks: [], notes: '', memories: [], macros: [], userContacts: [] };
 
     function loadSavedApps() {
       try {
         const raw = localStorage.getItem('jarvis_step3_workspace');
-        if (raw) return JSON.parse(raw);
-      } catch (e) {}
-      return JSON.parse(JSON.stringify(defaultApps));
+        if (!raw) return JSON.parse(JSON.stringify(defaultApps));
+        const saved = JSON.parse(raw);
+        if (!saved || typeof saved !== 'object' || Array.isArray(saved)) return JSON.parse(JSON.stringify(defaultApps));
+        const result = {
+          ...defaultApps, ...saved,
+          calendar: Array.isArray(saved.calendar) ? saved.calendar : [],
+          emails: Array.isArray(saved.emails) ? saved.emails : [],
+          tasks: Array.isArray(saved.tasks) ? saved.tasks : [],
+          notes: typeof saved.notes === 'string' ? saved.notes : '',
+          memories: Array.isArray(saved.memories) ? saved.memories : [],
+          macros: Array.isArray(saved.macros) ? saved.macros : [],
+          userContacts: Array.isArray(saved.userContacts) ? saved.userContacts : []
+        };
+        const fakeEvents = ['Stark R&D Propulsion Telemetry Review','Global Defense Satellite Sync','Mark VII Arc Reactor Harmonic Calibration'];
+        const fakeMail = ['Stark Clean Energy Grid Deployment Sign-off','Gamma Spectrometer Telemetry Calibration','Helicarrier Orbital Uplink Coordinates'];
+        const fakeTasks = ['Upgrade HUD to High-Density Stark CAD','Isolate Frontend API Keys in RAM Vault','Test Interactive Connected App Workspace'];
+        result.calendar = result.calendar.filter(x => !fakeEvents.includes(x?.title));
+        result.emails = result.emails.filter(x => !fakeMail.includes(x?.subject));
+        result.tasks = result.tasks.filter(x => !fakeTasks.includes(x?.text));
+        result.memories = result.memories.filter(x => !String(x?.text || '').includes('Commander operates from Surat, Gujarat tactical node') && !String(x?.text || '').includes('Preferred HUD Optics: High-Density Stark Mark VII CAD'));
+        result.macros = result.macros.filter(x => !['Protocol Alpha','Protocol Orbital'].includes(x?.trigger));
+        if (typeof result.notes === 'string') result.notes = result.notes.split(/\r?\n/).filter(x => !x.includes('Arc Reactor output steady at 3.2 GJ/s.') && !x.includes('Secondary orbital uplink calibrated to Surat 21.17°N, 72.83°E.')).join('\n').trim();
+        return result;
+      } catch (error) { return JSON.parse(JSON.stringify(defaultApps)); }
     }
 
     function saveAppsState() {
@@ -2276,7 +2278,7 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
       isProcessing: false,
       privacyMasked: true,
       ramApiKey: null,
-      location: { city: "Surat", lat: 21.1702, lon: 72.8311 },
+      location: { city: '', lat: null, lon: null, country: '' },
       connectedApps: loadSavedApps()
     };
 
@@ -2298,10 +2300,22 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
     const coreActionText = document.getElementById('core-action-text');
     const waveformMode = document.getElementById('waveform-mode');
 
-    function showToast(msg) {
-      toastMsg.textContent = msg;
+    function showToast(msg, type = 'info') {
+      const message = String(msg ?? '');
+      const kind = type === 'info' ? (/failed|error|denied|blocked|unavailable|not found|not supported|missing|required|cannot|could not/i.test(message) ? 'error' : 'success') : type;
+      toastMsg.textContent = message;
+      toast.dataset.type = kind;
+      toast.setAttribute('role', kind === 'error' ? 'alert' : 'status');
+      toast.setAttribute('aria-live', kind === 'error' ? 'assertive' : 'polite');
       toast.classList.remove('translate-y-20', 'opacity-0');
-      setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 2500);
+      setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
+    }
+    function escapeHTML(value) {
+      return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+    }
+    function safeExternalUrl(value) {
+      try { const url = new URL(String(value), window.location.href); return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : ''; }
+      catch (error) { return ''; }
     }
 
     // --- LIVE CLOCK & REFLECTIVE DISPLAY ---
@@ -2317,14 +2331,6 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
       document.getElementById('big-month-str').textContent = months[now.getMonth()];
       document.getElementById('big-weekday-str').textContent = days[now.getDay()];
 
-      if (Math.random() > 0.45) {
-        const cpu = Math.floor(28 + Math.random() * 14);
-        document.getElementById('cpu-metric').textContent = cpu + '%';
-        document.getElementById('cpu-mini').textContent = cpu + '%';
-        document.getElementById('cpu-bar').style.width = cpu + '%';
-        document.getElementById('net-up').textContent = (1.1 + Math.random() * 0.9).toFixed(2) + ' MB/s';
-        document.getElementById('net-down').textContent = (14.2 + Math.random() * 8.4).toFixed(1) + ' MB/s';
-      }
     }
     setInterval(updateClock, 1000);
     updateClock();
@@ -2359,8 +2365,8 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
       if (miniTasks) {
         miniTasks.innerHTML = state.connectedApps.tasks.map(t => `
           <label class="flex items-center space-x-2 text-cyan-200 cursor-pointer">
-            <input type="checkbox" data-task-id="${t.id}" ${t.done ? 'checked' : ''} class="task-toggle-cb accent-cyan-400">
-            <span class="${t.done ? 'line-through text-slate-500' : ''}">${t.text}</span>
+            <input type="checkbox" data-task-id="${escapeHTML(Number(t.id) || 0)}" ${t.done ? 'checked' : ''} class="task-toggle-cb accent-cyan-400">
+            <span class="${t.done ? 'line-through text-slate-500' : ''}">${escapeHTML(t.text)}</span>
           </label>
         `).join('');
       }
@@ -2369,7 +2375,7 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
       const nextEv = document.getElementById('next-event');
       if (nextEv && state.connectedApps.calendar.length > 0) {
         const ev = state.connectedApps.calendar[0];
-        nextEv.textContent = `Next: ${ev.title} (${ev.time})`;
+        nextEv.textContent = `Next: ${escapeHTML(ev.title)} (${escapeHTML(ev.time)})`;
       }
 
       // 2. Modal Calendar List
@@ -2382,8 +2388,8 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
               <span class="text-cyan-100">${ev.title}</span>
             </div>
             <div class="flex items-center space-x-2">
-              <span class="text-[10px] px-1.5 py-0.5 bg-cyan-950 text-cyan-300 border border-cyan-500/30">${ev.status}</span>
-              <button data-del-cal="${ev.id}" class="text-rose-400 hover:text-rose-300 px-1">[DEL]</button>
+              <span class="text-[10px] px-1.5 py-0.5 bg-cyan-950 text-cyan-300 border border-cyan-500/30">${escapeHTML(ev.status)}</span>
+              <button data-del-cal="${escapeHTML(Number(ev.id) || 0)}" class="text-rose-400 hover:text-rose-300 px-1">[DEL]</button>
             </div>
           </div>
         `).join('');
@@ -2395,10 +2401,10 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
         hubMail.innerHTML = state.connectedApps.emails.map(m => `
           <div class="flex items-center justify-between p-2 bg-slate-950/90 border border-amber-500/25">
             <div class="truncate pr-2">
-              <span class="text-amber-400 font-bold">${m.from}:</span>
-              <span class="text-slate-200 ml-1">${m.subject}</span>
+              <span class="text-amber-400 font-bold">${escapeHTML(m.from)}:</span>
+              <span class="text-slate-200 ml-1">${escapeHTML(m.subject)}</span>
             </div>
-            <button data-del-mail="${m.id}" class="text-rose-400 hover:text-rose-300 text-[10px] shrink-0">[ARCHIVE]</button>
+            <button data-del-mail="${escapeHTML(Number(m.id) || 0)}" class="text-rose-400 hover:text-rose-300 text-[10px] shrink-0">[ARCHIVE]</button>
           </div>
         `).join('');
       }
@@ -3376,11 +3382,7 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
         channelData[i] = Math.max(-0.92, Math.min(0.92, (glottal * 0.38 + formantResonance * 0.62 + noise) * env * edgeEnv * 0.65));
       }
 
-      // Also attempt asynchronously fetching & decoding real British neural MP3 into `audioCtx` if network allows!
-      const shortChunk = cleanStr.slice(0, 170);
-      const mp3Url = `https://api.streamelements.com/kappa/v2/speech?voice=Brian&text=${encodeURIComponent(shortChunk)}`;
-
-      // Start the continuous synthesized AudioBuffer immediately so there is ZERO silence gap!
+      // Keep generated speech local. Spoken text is not sent to an external TTS service.
       const source = audioCtx.createBufferSource();
       source.buffer = audioBuffer;
       const masterGain = audioCtx.createGain();
@@ -3388,7 +3390,6 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
       source.connect(masterGain);
       masterGain.connect(audioCtx.destination);
       activeBufferSource = source;
-
       source.onended = () => {
         if (activeBufferSource === source) {
           activeBufferSource = null;
@@ -3396,35 +3397,6 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
         }
       };
       source.start(0);
-
-      // Try upgrading to decoded cloud MP3 stream inside the same `audioCtx` if online
-      fetch(mp3Url)
-        .then(r => r.ok ? r.arrayBuffer() : Promise.reject())
-        .then(arr => audioCtx.decodeAudioData(arr))
-        .then(decodedMp3 => {
-          if (!state.isSpeaking || !state.voiceEnabled) return;
-          // Stop the synth buffer and seamlessly play the decoded human MP3 buffer through `audioCtx.destination`!
-          if (activeBufferSource) {
-            try { activeBufferSource.onended = null; activeBufferSource.stop(); } catch (e) {}
-          }
-          const mp3Source = audioCtx.createBufferSource();
-          mp3Source.buffer = decodedMp3;
-          const g = audioCtx.createGain();
-          g.gain.setValueAtTime(1.0, audioCtx.currentTime);
-          mp3Source.connect(g);
-          g.connect(audioCtx.destination);
-          activeBufferSource = mp3Source;
-          mp3Source.onended = () => {
-            if (activeBufferSource === mp3Source) {
-              activeBufferSource = null;
-              if (onDone) onDone();
-            }
-          };
-          mp3Source.start(0);
-        })
-        .catch(() => {
-          // Synth AudioBuffer is already playing continuously through audioCtx.destination!
-        });
 
       return durationSec * 1000;
     }
@@ -3674,63 +3646,55 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
     // WORLD KNOWLEDGE & COMMAND ROUTER
     // =========================================================================
     function appendMessage(sender, text, meta = null) {
-      const timeStr = new Date().toTimeString().split(' ')[0];
-      const isUser = sender === 'COMMANDER';
-      const item = document.createElement('div');
-      item.className = 'flex space-x-2.5';
-
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const isUser = sender === 'COMMANDER' || sender === 'USER';
+      const item = document.createElement('div'); item.className = 'flex space-x-2.5';
       const avatar = document.createElement('div');
-      avatar.className = `w-6 h-6 flex items-center justify-center text-[11px] font-display-hud shrink-0 font-bold border ${
-        isUser ? 'bg-amber-950/70 text-amber-300 border-amber-400' : 'bg-cyan-950/80 text-cyan-300 border-cyan-400'
-      }`;
-      avatar.textContent = isUser ? 'C' : 'J';
-
-      const body = document.createElement('div');
-      body.className = 'flex-1';
+      avatar.className = `w-6 h-6 flex items-center justify-center text-[11px] font-display-hud shrink-0 font-bold border ${isUser ? 'bg-amber-950/70 text-amber-300 border-amber-400' : 'bg-cyan-950/80 text-cyan-300 border-cyan-400'}`;
+      avatar.textContent = isUser ? 'U' : 'J';
+      const body = document.createElement('div'); body.className = 'flex-1 min-w-0';
+      const link = meta && meta.url ? safeExternalUrl(meta.url) : '';
       body.innerHTML = `
-        <div class="flex items-center justify-between font-mono-hud text-[10px]">
-          <div class="flex items-center space-x-2">
-            <span class="font-bold ${isUser ? 'text-amber-400' : 'text-cyan-400'}">${sender}</span>
-            <span class="text-slate-500">${timeStr}</span>
-            ${meta && meta.source ? `<span class="px-1 bg-cyan-950 border border-cyan-500/40 text-cyan-300 text-[9px]">${meta.source}</span>` : ''}
+        <div class="flex items-center justify-between gap-2 font-mono-hud text-[10px]">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="font-bold ${isUser ? 'text-amber-400' : 'text-cyan-400'}">${escapeHTML(sender)}</span>
+            <span class="text-slate-500">${escapeHTML(timeStr)}</span>
+            ${meta && meta.source ? `<span class="px-1 bg-cyan-950 border border-cyan-500/40 text-cyan-300 text-[9px]">${escapeHTML(meta.source)}</span>` : ''}
           </div>
-          ${!isUser ? `<button type="button" class="replay-voice-btn px-1.5 py-0.2 bg-cyan-950 hover:bg-amber-400 hover:text-black border border-cyan-500/40 text-cyan-300 text-[9px] transition" title="Speak This Answer Aloud"> SPEAK</button>` : ''}
+          ${!isUser ? `<button type="button" class="replay-voice-btn px-1.5 py-0.2 bg-cyan-950 border border-cyan-500/40 text-cyan-300 text-[9px]" title="Speak this answer aloud">SPEAK</button>` : ''}
         </div>
-        <div class="p-2 mt-0.5 border text-xs leading-relaxed ${
-          isUser ? 'bg-[#120f0c] border-amber-500/30 text-amber-100' : 'bg-[#070b12] border-cyan-500/30 text-slate-200'
-        }">
-          <div>${text}</div>
-          ${meta && meta.url ? `<div class="mt-1.5 pt-1 border-t border-cyan-500/20 text-[10px] font-mono-hud"><a href="${meta.url}" target="_blank" rel="noopener noreferrer" class="text-cyan-400 hover:text-amber-400 underline">OPEN VERIFIED SOURCE TELEMETRY ↗</a></div>` : ''}
-        </div>
-      `;
-
-      const replayBtn = body.querySelector('.replay-voice-btn');
-      if (replayBtn) {
-        replayBtn.addEventListener('click', () => {
-          speakText(text);
-        });
-      }
-
-      item.appendChild(avatar);
-      item.appendChild(body);
-      messagesContainer.appendChild(item);
+        <div class="p-2 mt-0.5 border text-xs leading-relaxed whitespace-pre-wrap break-words ${isUser ? 'bg-[#120f0c] border-amber-500/30 text-amber-100' : 'bg-[#070b12] border-cyan-500/30 text-slate-200'}">
+          <div>${escapeHTML(text)}</div>
+          ${link ? `<div class="mt-1.5 pt-1 border-t border-cyan-500/20 text-[10px] font-mono-hud"><a href="${escapeHTML(link)}" target="_blank" rel="noopener noreferrer" class="text-cyan-400 underline">OPEN SOURCE</a></div>` : ''}
+        </div>`;
+      const replay = body.querySelector('.replay-voice-btn');
+      if (replay) replay.addEventListener('click', () => speakText(String(text ?? '')));
+      item.appendChild(avatar); item.appendChild(body); messagesContainer.appendChild(item);
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
     async function fetchLiveWeather() {
+      const lat = Number(state.location?.lat), lon = Number(state.location?.lon);
+      const city = state.location?.city || 'selected location';
+      const temp = document.getElementById('env-temp'), wind = document.getElementById('env-wind');
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+        if (temp) temp.textContent = 'NOT SET'; if (wind) wind.textContent = 'NOT SET';
+        return 'Weather is not loaded. Choose a city or request location access.';
+      }
       try {
-        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${state.location.lat}&longitude=${state.location.lon}&current_weather=true`);
-        const data = await res.json();
-        if (data?.current_weather) {
-          const cw = data.current_weather;
-          document.getElementById('env-temp').textContent = `${Math.round(cw.temperature)}°C`;
-          document.getElementById('env-wind').textContent = `${cw.windspeed} km/h`;
-          return `Surat Atmospheric Telemetry: ${cw.temperature}°C, Wind ${cw.windspeed} km/h at ${cw.winddirection}°. Synced via Open-Meteo.`;
-        }
-      } catch (e) {}
-      return `Surat Atmospheric Sensors: 30°C, Wind 11.4 km/h, visibility optimal.`;
+        const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
+        if (!response.ok) throw new Error(`Weather provider returned HTTP ${response.status}`);
+        const data = await response.json();
+        if (!data?.current_weather) throw new Error('Weather data is unavailable.');
+        const current = data.current_weather;
+        if (temp) temp.textContent = `${Math.round(current.temperature)}°C`;
+        if (wind) wind.textContent = `${current.windspeed} km/h`;
+        return `${city} weather: ${current.temperature}°C, wind ${current.windspeed} km/h. Source: Open-Meteo.`;
+      } catch (error) {
+        if (temp) temp.textContent = 'UNAVAILABLE'; if (wind) wind.textContent = 'UNAVAILABLE';
+        return `Weather data is unavailable for ${city}. ${error?.message || 'Check your connection.'}`;
+      }
     }
-    fetchLiveWeather();
 
     // =========================================================================
     // STEP 8: MULTI-API EXACT INTELLIGENCE & QUESTION-ANSWERING PIPELINE
@@ -3849,24 +3813,7 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
         }
       }
 
-      // Stage B: Try Keyless Live AI Endpoint (Pollinations Open Text API) with a fast 4.5s timeout for exact direct answers to any question!
-      try {
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 4500);
-        const memContext = (state.connectedApps.memories || []).slice(0, 4).map(m => m.text).join('; ');
-        const prevContext = state.lastQueryContext ? `Previous topic: ${state.lastQueryContext}. ` : '';
-        const sysPrompt = `You are JARVIS, Tony Stark's tactical AI assistant. ${prevContext}${memContext ? 'User facts: ' + memContext + '. ' : ''}Provide the exact, accurate, direct factual answer to the user's question in 1 to 2 concise sentences suitable for spoken audio. No markdown.`;
-        const aiUrl = `https://text.pollinations.ai/${encodeURIComponent(q)}?model=openai&system=${encodeURIComponent(sysPrompt)}`;
-        const aiRes = await fetch(aiUrl, { signal: controller.signal });
-        clearTimeout(timer);
-        if (aiRes.ok) {
-          const aiText = (await aiRes.text()).trim();
-          if (aiText && aiText.length > 8 && !aiText.startsWith('<!DOCTYPE') && !aiText.startsWith('{')) {
-            return { text: aiText, source: 'JARVIS LIVE AI ENGINE', url: null };
-          }
-        }
-      } catch (e) {}
-
+      // Do not forward user prompts or saved-memory context to an unconfigured AI provider.
       // Stage C: DuckDuckGo Instant Answer API
       const subject = extractCleanSubject(q);
       try {
@@ -4269,7 +4216,7 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
       if (lower.includes('schedule') || lower.includes('calendar')) {
         state.isProcessing = false;
         const summary = state.connectedApps.calendar.map(e => `${e.time} (${e.title})`).join(' • ');
-        const resp = `Calendar Bridge holds ${state.connectedApps.calendar.length} events: ${summary}.`;
+        const resp = `Calendar Bridge holds ${state.connectedApps.calendar.length} events: ${escapeHTML(summary)}.`;
         appendMessage('J.A.R.V.I.S.', resp, { source: 'CALENDAR BRIDGE' });
         speakText(resp);
         return;
@@ -4277,7 +4224,7 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
       if (lower.includes('mail') || lower.includes('email') || lower.includes('inbox')) {
         state.isProcessing = false;
         const summary = state.connectedApps.emails.map(m => `${m.from}: "${m.subject}"`).join(' | ');
-        const resp = `Comms Hub holds ${state.connectedApps.emails.length} messages: ${summary}.`;
+        const resp = `Comms Hub holds ${state.connectedApps.emails.length} messages: ${escapeHTML(summary)}.`;
         appendMessage('J.A.R.V.I.S.', resp, { source: 'COMMS HUB' });
         speakText(resp);
         return;
@@ -4541,12 +4488,7 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
     });
 
     // Ensure custom macros array exists in state.connectedApps
-    if (!state.connectedApps.macros) {
-      state.connectedApps.macros = [
-        { id: 101, trigger: 'Protocol Alpha', action: 'Search Quantum Computing' },
-        { id: 102, trigger: 'Protocol Orbital', action: 'Search SpaceX Starship' }
-      ];
-    }
+    if (!Array.isArray(state.connectedApps.macros)) state.connectedApps.macros = [];
 
     function renderCustomMacros() {
       const listEl = document.getElementById('custom-macros-list');
@@ -4554,9 +4496,9 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
       listEl.innerHTML = (state.connectedApps.macros || []).map(m => `
         <div class="flex items-center justify-between p-2 bg-slate-950/90 border border-cyan-500/25">
           <div>
-            <span class="text-emerald-400 font-bold">"${m.trigger}"</span>
+            <span class="text-emerald-400 font-bold">"${escapeHTML(m.trigger)}"</span>
             <span class="text-slate-500 mx-1.5"></span>
-            <span class="text-cyan-200">${m.action}</span>
+            <span class="text-cyan-200">${escapeHTML(m.action)}</span>
           </div>
           <div class="flex items-center space-x-2">
             <button data-run-macro="${m.id}" class="px-2 py-0.5 bg-cyan-950 border border-cyan-500/40 text-cyan-300 hover:border-amber-400 text-[10px]">RUN</button>
@@ -4839,12 +4781,7 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
             const isIndianTz = tz.includes('Calcutta') || tz.includes('Kolkata') || (new Date().getTimezoneOffset() === -330);
             if (!isIndianTz) {
               try {
-                const whoRes = await fetch('https://ipwho.is/');
-                const whoData = await whoRes.json();
-                if (whoData && whoData.city && whoData.latitude) {
-                  await syncLocationAndWeather(whoData.city, whoData.latitude, whoData.longitude, whoData.country_code || '', 'IP GEO', false);
-                  return;
-                }
+                // IP-based geolocation is intentionally disabled.
               } catch (e) {}
             }
             if (forceGpsPrompt) {
@@ -4855,7 +4792,7 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
         );
       }
     }
-    autoDetectVisitorLocation(false);
+    // Location is requested only when the user activates a location control.
 
     // Search Any City Worldwide via Open-Meteo Geocoding API (Manual Override)
     async function searchAndSetGlobalCity(cityName) {
@@ -5216,21 +5153,13 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
 
     function renderDispatchResult(title, detailText, externalUrl, linkLabel) {
       if (dispatchOutput) {
+        const safeUrl = safeExternalUrl(externalUrl);
         dispatchOutput.innerHTML = `
-          <div class="flex items-center justify-between">
-            <span class="text-emerald-400 font-bold"> ${title}</span>
-            <span class="text-[10px] text-amber-400">SAVED TO WORKSPACE</span>
-          </div>
-          <div class="text-slate-200 text-[11px] mt-0.5">${detailText}</div>
-          <div class="pt-1.5 mt-1 border-t border-cyan-500/20 flex items-center justify-between">
-            <span class="text-[10px] text-slate-400">If browser blocked popup, click direct link:</span>
-            <a href="${externalUrl}" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1 bg-cyan-500 hover:bg-amber-400 text-black font-display-hud font-bold text-[10px]">
-              ${linkLabel} ↗
-            </a>
-          </div>
+          <div class="flex items-center justify-between gap-2"><span class="text-emerald-400 font-bold">${escapeHTML(title)}</span><span class="text-[10px] text-amber-400">LOCAL HANDOFF</span></div>
+          <div class="text-slate-200 text-[11px] mt-0.5 break-words">${escapeHTML(detailText)}</div>
+          ${safeUrl ? `<div class="pt-1.5 mt-1 border-t border-cyan-500/20 flex items-center justify-between gap-2"><span class="text-[10px] text-slate-400">Continue in the external service:</span><a href="${escapeHTML(safeUrl)}" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1 bg-cyan-500 text-black font-bold text-[10px]">${escapeHTML(linkLabel)}</a></div>` : ''}
         `;
       }
-      // Also log in main J.A.R.V.I.S. chat feed so user sees it even after closing modal
       appendMessage('J.A.R.V.I.S.', `${title}: ${detailText}`, { source: 'APP BRIDGE', url: externalUrl });
     }
 
@@ -5548,34 +5477,16 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
 
 
 
-    // In-App WhatsApp Send Button & Native Probe
+    // WhatsApp composer creates a draft in the external WhatsApp application.
     const sendInAppWaBtn = document.getElementById('send-inapp-wa-btn');
     if (sendInAppWaBtn) {
       sendInAppWaBtn.addEventListener('click', () => {
-        const inp = document.getElementById('ext-wa-msg');
-        const txt = inp ? inp.value.trim() : '';
-        if (!txt) {
-          showToast('Type a message to send in WhatsApp first!');
-          return;
-        }
-        const waChat = document.getElementById('inapp-wa-chatlog');
-        const msgDiv = document.createElement('div');
-        msgDiv.className = 'p-1.5 bg-cyan-950/60 border-l-2 border-cyan-400 text-cyan-100';
-        msgDiv.innerHTML = `<strong class="text-cyan-300">Commander (Sent):</strong> ${txt}`;
-        waChat.appendChild(msgDiv);
-        waChat.scrollTop = waChat.scrollHeight;
-        inp.value = '';
-        playHudSound('confirm');
-
-        // Simulated encrypted reply from JARVIS Comms Bridge
-        setTimeout(() => {
-          const replyDiv = document.createElement('div');
-          replyDiv.className = 'p-1.5 bg-emerald-950/40 border-l-2 border-emerald-400 text-emerald-100';
-          replyDiv.innerHTML = `<strong class="text-emerald-400">Stark Comms Relay:</strong> Message "${txt}" encrypted and transmitted.`;
-          waChat.appendChild(replyDiv);
-          waChat.scrollTop = waChat.scrollHeight;
-          playHudSound('chirp');
-        }, 650);
+        const input = document.getElementById('ext-wa-msg');
+        const message = input ? input.value.trim() : '';
+        if (!message) { showToast('Enter a message before opening WhatsApp.', 'error'); return; }
+        window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
+        showToast('WhatsApp draft opened. Review and send it in WhatsApp.');
+        input.value = '';
       });
     }
 
@@ -5869,12 +5780,7 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
       });
     }
 
-    if (!state.connectedApps.memories) {
-      state.connectedApps.memories = [
-        { id: 1, text: "Commander operates from Surat, Gujarat tactical node", time: "SYSTEM INIT" },
-        { id: 2, text: "Preferred HUD Optics: High-Density Stark Mark VII CAD", time: "SYSTEM INIT" }
-      ];
-    }
+    if (!Array.isArray(state.connectedApps.memories)) state.connectedApps.memories = [];
 
     function renderNeuralMemories() {
       const list = document.getElementById('neural-memory-list');
@@ -5882,8 +5788,8 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
       list.innerHTML = (state.connectedApps.memories || []).map(m => `
         <div class="flex items-center justify-between p-2 bg-slate-950 border border-cyan-500/30">
           <div class="pr-2">
-            <div class="text-cyan-100">${m.text}</div>
-            <div class="text-[9px] text-slate-500">LOGGED: ${m.time || 'ACTIVE'}</div>
+            <div class="text-cyan-100">${escapeHTML(m.text)}</div>
+            <div class="text-[9px] text-slate-500">LOGGED: ${escapeHTML(m.time || 'TIME NOT SET')}</div>
           </div>
           <button type="button" data-del-mem="${m.id}" class="text-rose-400 hover:text-rose-300 text-[10px] shrink-0">[FORGET]</button>
         </div>
@@ -6335,39 +6241,14 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
     }
 
     function sendDirectWhatsAppMessage(recipient, text) {
-      const box = document.getElementById('wa-direct-messages-box');
-      const headerName = document.getElementById('wa-active-header-name');
-      if (headerName && recipient) {
-        currentWaRecipient = recipient;
-        headerName.textContent = `${recipient} (${contactDirectory[recipient.toLowerCase()] || ''})`;
-      }
-      if (!box || !text) return;
-
-      // Append outgoing green WhatsApp bubble
-      const outDiv = document.createElement('div');
-      outDiv.className = 'ml-auto max-w-md p-2.5 rounded-lg bg-[#005c4b] text-white text-xs shadow';
-      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      outDiv.innerHTML = `
-        <div class="font-bold text-emerald-300 text-[10px] mb-0.5">You  ${currentWaRecipient}</div>
-        <div>${text}</div>
-        <div class="text-[9px] text-emerald-200 text-right mt-0.5">${timeStr} </div>
-      `;
-      box.appendChild(outDiv);
-      box.scrollTop = box.scrollHeight;
-      playHudSound('confirm');
-
-      // Automatic realistic reply from the contact after 900ms
-      setTimeout(() => {
-        const replyDiv = document.createElement('div');
-        replyDiv.className = 'max-w-md p-2.5 rounded-lg bg-[#202c33] text-slate-100 text-xs shadow';
-        replyDiv.innerHTML = `
-          <div class="font-bold text-emerald-400 text-[10px] mb-0.5">${currentWaRecipient}</div>
-          <div>Got your message: "${text}"! </div>
-        `;
-        box.appendChild(replyDiv);
-        box.scrollTop = box.scrollHeight;
-        playHudSound('chirp');
-      }, 950);
+      const phone = String(contactDirectory[recipient?.toLowerCase?.()] || '').replace(/[^0-9]/g, '');
+      const message = String(text || '').trim();
+      if (!message) { showToast('Enter a message before opening WhatsApp.', 'error'); return; }
+      const url = phone ? `https://wa.me/${phone}?text=${encodeURIComponent(message)}` : `https://wa.me/?text=${encodeURIComponent(message)}`;
+      window.open(url, '_blank', 'noopener,noreferrer');
+      const header = document.getElementById('wa-active-header-name');
+      if (header) header.textContent = recipient || 'WhatsApp';
+      showToast('WhatsApp draft opened. Confirm the recipient and send it in WhatsApp.');
     }
 
     function openDirectAppWindow(appKey, payload = null) {
@@ -6819,59 +6700,16 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
     // STEP 14: AUTONOMOUS MULTI-AGENT AI SWARM CONTROLLER
     // =========================================================================
     function runAutonomousAgentSwarm(missionTopic) {
-      const topic = missionTopic.trim() || 'Next-Gen AI Platform';
+      const topic = String(missionTopic || '').trim();
+      if (!topic) { showToast('Enter a workflow topic first.', 'error'); return; }
       const badge = document.getElementById('swarm-status-badge');
-      const outBox = document.getElementById('swarm-master-output');
-      playHudSound('pulse');
-      triggerBgShockwave(window.innerWidth / 2, window.innerHeight / 2, '#ff7b00');
-
-      if (badge) {
-        badge.textContent = ' 4 AGENTS EXECUTING...';
-        badge.className = 'px-2.5 py-0.5 bg-amber-500 text-black text-[10px] font-bold animate-pulse';
-      }
-
-      const setAgent = (num, stateTxt, pct, logTxt) => {
-        const sEl = document.getElementById(`ag${num}-state`);
-        const bEl = document.getElementById(`ag${num}-bar`);
-        const lEl = document.getElementById(`ag${num}-log`);
-        if (sEl) sEl.textContent = stateTxt;
-        if (bEl) bEl.style.width = pct + '%';
-        if (lEl) lEl.textContent = logTxt;
-      };
-
-      setAgent(1, 'SCANNING...', 25, `Querying global datasets for "${topic}"...`);
-      setAgent(2, 'QUEUED', 10, 'Awaiting research telemetry...');
-      setAgent(3, 'AUDITING', 20, 'Checking zero-trust credential perimeter...');
-      setAgent(4, 'SYNTHESIZING', 15, 'Preparing executive voice briefing...');
-
-      setTimeout(() => {
-        setAgent(1, 'COMPLETE ', 100, `Extracted core specifications & market vectors for "${topic}".`);
-        setAgent(2, 'CODING...', 65, `Generating responsive UI & Tailwind layout in Web Dev Studio...`);
-        playHudSound('chirp');
-      }, 450);
-
-      setTimeout(() => {
-        setAgent(2, 'COMPLETE ', 100, `Compiled live web application for "${topic}" in AI Web Dev Studio.`);
-        setAgent(3, 'COMPLETE ', 100, `Verified AES-256 local storage & RAM-only API vault isolation.`);
-        setAgent(4, 'SPEAKING...', 90, `Broadcasting multi-agent synthesis report...`);
-        if (typeof generateAiWebsiteInStudio === 'function') {
-          generateAiWebsiteInStudio(topic);
-        }
-      }, 950);
-
-      setTimeout(() => {
-        setAgent(4, 'COMPLETE ', 100, `Executive verdict delivered & spoken aloud.`);
-        if (badge) {
-          badge.textContent = ' SWARM MISSION COMPLETE';
-          badge.className = 'px-2.5 py-0.5 bg-emerald-950 border border-emerald-400 text-emerald-300 text-[10px] font-bold';
-        }
-        const report = `Autonomous Agent Swarm completed mission for ${topic}. Agent 1 verified global specifications, Agent 2 generated the live interactive website inside your AI Web Dev Studio, and Agent 3 confirmed zero security leaks.`;
-        if (outBox) {
-          outBox.innerHTML = `<strong class="text-amber-300">SWARM VERDICT // ${topic.toUpperCase()}:</strong><br>${report}`;
-        }
-        appendMessage('J.A.R.V.I.S.', report, { source: 'MULTI-AGENT SWARM' });
-        speakText(report);
-      }, 1350);
+      const output = document.getElementById('swarm-master-output');
+      if (typeof generateAiWebsiteInStudio === 'function') generateAiWebsiteInStudio(topic);
+      const report = `This build does not run independent AI agents. It created a local template preview for "${topic}". No external research, security audit, or deployment was performed.`;
+      if (badge) { badge.textContent = 'LOCAL PREVIEW ONLY'; badge.className = 'px-2.5 py-0.5 bg-slate-800 border border-cyan-500/40 text-cyan-200 text-[10px] font-bold'; }
+      if (output) output.textContent = report;
+      appendMessage('J.A.R.V.I.S.', report, { source: 'LOCAL WORKFLOW PREVIEW' });
+      showToast('Local template preview created. No independent agents were run.');
     }
 
     const swarmForm = document.getElementById('agent-swarm-form');
@@ -6915,8 +6753,8 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
       listEl.innerHTML = contacts.map(c => `
         <div class="flex items-center justify-between p-2 bg-slate-950 border border-cyan-500/25 rounded">
           <div>
-            <strong class="text-cyan-200">${c.name}</strong>
-            <span class="text-slate-400 text-[10px] ml-1.5">${c.phone}</span>
+            <strong class="text-cyan-200">${escapeHTML(c.name)}</strong>
+            <span class="text-slate-400 text-[10px] ml-1.5">${escapeHTML(c.phone)}</span>
           </div>
           <div class="flex items-center space-x-1.5">
             <button type="button" data-ucall-name="${c.name}" data-ucall-num="${c.phone}" class="ucall-btn px-2.5 py-0.5 bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-[10px] rounded">CALL</button>
@@ -7016,6 +6854,7 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
       fileScannerInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
+        if (file.size > 20 * 1024 * 1024) { showToast('File exceeds the 20 MB inspection limit.', 'error'); e.target.value = ''; return; }
         playHudSound('pulse');
         if (scanBadge) scanBadge.textContent = 'ANALYZING...';
         const kb = (file.size / 1024).toFixed(1);
@@ -7028,13 +6867,13 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
             img.onload = () => {
               if (imgWrap && imgThumb && imgMeta) {
                 imgThumb.src = dataUrl;
-                imgMeta.innerHTML = `<div><strong>FILE:</strong> ${file.name}</div><div><strong>RESOLUTION:</strong> ${img.width} × ${img.height} px (${kb} KB)</div>`;
+                imgMeta.innerHTML = `<div><strong>FILE:</strong> ${escapeHTML(file.name)}</div><div><strong>RESOLUTION:</strong> ${img.width} × ${img.height} px (${kb} KB)</div>`;
                 imgWrap.classList.remove('hidden');
                 imgWrap.classList.add('flex');
               }
-              const summary = `Optical Image Scan Complete for ${file.name}. Resolution is ${img.width} by ${img.height} pixels, size ${kb} kilobytes, aspect ratio ${(img.width / Math.max(1, img.height)).toFixed(2)}.`;
+              const summary = `Optical Image Scan Complete for ${escapeHTML(file.name)}. Resolution is ${img.width} by ${img.height} pixels, size ${kb} kilobytes, aspect ratio ${(img.width / Math.max(1, img.height)).toFixed(2)}.`;
               lastScanSummaryText = summary;
-              if (scanOutBox) scanOutBox.innerHTML = `<strong class="text-cyan-300">IMAGE TELEMETRY REPORT:</strong><br>${summary}`;
+              if (scanOutBox) scanOutBox.innerHTML = `<strong class="text-cyan-300">IMAGE TELEMETRY REPORT:</strong><br>${escapeHTML(summary)}`;
               if (scanBadge) scanBadge.textContent = 'IMAGE VERIFIED ';
               appendMessage('J.A.R.V.I.S.', summary, { source: 'OPTICAL IMAGE SCANNER' });
               speakText(summary);
@@ -7050,10 +6889,10 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
             const lines = text.split(/\r?\n/).filter(Boolean);
             const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
             const previewSnippet = lines.slice(0, 3).join(' // ').slice(0, 160);
-            const summary = `Document Scan Complete for ${file.name} (${kb} KB). Extracted ${lines.length} non-empty lines and ${wordCount} words. Top content preview: ${previewSnippet}`;
+            const summary = `Document Scan Complete for ${escapeHTML(file.name)} (${kb} KB). Extracted ${lines.length} non-empty lines and ${wordCount} words. Top content preview: ${escapeHTML(previewSnippet)}`;
             lastScanSummaryText = summary;
             if (scanOutBox) {
-              scanOutBox.innerHTML = `<strong class="text-amber-300">DOCUMENT ANALYSIS // ${file.name.toUpperCase()}:</strong><br>Lines: ${lines.length} | Words: ${wordCount} | Size: ${kb} KB<br><span class="text-cyan-200 mt-1 block">Preview: "${previewSnippet}..."</span>`;
+              scanOutBox.innerHTML = `<strong class="text-amber-300">DOCUMENT ANALYSIS // ${file.name.toUpperCase()}:</strong><br>Lines: ${lines.length} | Words: ${wordCount} | Size: ${kb} KB<br><span class="text-cyan-200 mt-1 block">Preview: "${escapeHTML(previewSnippet)}..."</span>`;
             }
             if (scanBadge) scanBadge.textContent = 'DOC ANALYZED ';
             appendMessage('J.A.R.V.I.S.', summary, { source: 'AI DOCUMENT SCANNER' });
@@ -7061,21 +6900,6 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
           };
           reader.readAsText(file);
         }
-      });
-    }
-
-    const demoScanBtn = document.getElementById('demo-file-scan-btn');
-    if (demoScanBtn) {
-      demoScanBtn.addEventListener('click', () => {
-        playHudSound('confirm');
-        const demoSummary = "Telemetry Log Scan Complete: Analyzed 1,240 orbital sensor rows. Peak reactor efficiency is 99.4 percent with zero thermal anomalies detected.";
-        lastScanSummaryText = demoSummary;
-        if (scanOutBox) {
-          scanOutBox.innerHTML = `<strong class="text-emerald-400">DEMO TELEMETRY DATASET SCAN:</strong><br>${demoSummary}`;
-        }
-        if (scanBadge) scanBadge.textContent = 'DEMO VERIFIED ';
-        appendMessage('J.A.R.V.I.S.', demoSummary, { source: 'AI FILE SCANNER' });
-        speakText(demoSummary);
       });
     }
 
@@ -7625,55 +7449,38 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
     async function fetchAndRenderLiveMediaResults(query, appName) {
       const box = document.getElementById('live-media-results-box');
       if (!box) return;
-      const cleanQ = (query || 'MrBeast').trim();
-      box.classList.remove('hidden');
-      box.innerHTML = `<div class="p-2 text-cyan-300 animate-pulse"> Searching live global media streams for "${cleanQ}"...</div>`;
-
-      // Query Apple iTunes Search API (CORS-enabled public JSON API that returns real artwork + direct playable MP4/M4A preview streams!)
+      const cleanQuery = String(query || '').trim();
+      if (!cleanQuery) { box.textContent = 'Enter a search term to load media results.'; return; }
+      box.classList.remove('hidden'); box.textContent = `Searching media results for "${cleanQuery}".`;
       try {
-        const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(cleanQ)}&limit=3`);
-        const data = await res.json();
-        if (data?.results?.length > 0) {
+        const response = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(cleanQuery)}&limit=3`);
+        if (!response.ok) throw new Error('Media search provider unavailable.');
+        const data = await response.json();
+        if (data?.results?.length) {
           box.innerHTML = `
-            <div class="text-[10px] text-emerald-400 font-bold uppercase">▶ LIVE STREAMABLE RESULTS FOR "${cleanQ.toUpperCase()}" (PLAYS DIRECTLY WITHOUT ERROR 153):</div>
+            <div class="text-[10px] text-emerald-400 font-bold uppercase">MEDIA RESULTS FOR "${escapeHTML(cleanQuery.toUpperCase())}"</div>
             <div class="space-y-2">
               ${data.results.map(item => {
-                const title = item.trackName || item.collectionName || cleanQ;
-                const artist = item.artistName || 'Verified Creator';
-                const thumb = item.artworkUrl100 || '';
-                const preview = item.previewUrl || '';
-                const ytLink = `https://www.youtube.com/results?search_query=${encodeURIComponent(title + ' ' + artist)}`;
-                return `
-                  <div class="p-2.5 bg-slate-950 border border-cyan-500/40 rounded flex flex-col space-y-2">
-                    <div class="flex items-center justify-between gap-2">
-                      <div class="flex items-center space-x-2.5 overflow-hidden">
-                        ${thumb ? `<img src="${thumb}" class="w-10 h-10 rounded border border-cyan-400 shrink-0">` : ''}
-                        <div class="truncate">
-                          <div class="text-white font-bold text-xs truncate">${title}</div>
-                          <div class="text-slate-400 text-[10px] truncate">${artist}</div>
-                        </div>
-                      </div>
-                      <a href="${ytLink}" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] rounded shrink-0">YOUTUBE ↗</a>
-                    </div>
-                    ${preview ? `<audio controls src="${preview}" class="w-full h-7"></audio>` : ''}
-                  </div>
-                `;
+                const title = item.trackName || item.collectionName || cleanQuery;
+                const artist = item.artistName || 'Unknown creator';
+                const artwork = safeExternalUrl(item.artworkUrl100 || '');
+                const preview = safeExternalUrl(item.previewUrl || '');
+                const youtube = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(title + ' ' + artist);
+                return `<div class="p-2.5 bg-slate-950 border border-cyan-500/40 flex flex-col space-y-2">
+                  <div class="flex items-center justify-between gap-2"><div class="flex items-center gap-2.5 overflow-hidden">
+                    ${artwork ? `<img src="${escapeHTML(artwork)}" alt="" loading="lazy" class="w-10 h-10 border border-cyan-400 shrink-0">` : ''}
+                    <div class="min-w-0"><div class="text-white font-bold text-xs break-words">${escapeHTML(title)}</div><div class="text-slate-400 text-[10px] break-words">${escapeHTML(artist)}</div></div>
+                  </div><a href="${escapeHTML(youtube)}" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1 bg-slate-800 border border-slate-600 text-white font-bold text-[10px] shrink-0">YOUTUBE SEARCH</a></div>
+                  ${preview ? `<audio controls src="${escapeHTML(preview)}" class="w-full h-7"></audio>` : ''}</div>`;
               }).join('')}
-            </div>
-          `;
+            </div>`;
           return;
         }
-      } catch (e) {}
-
-      // Fallback if search has no iTunes match: show direct search card
-      box.innerHTML = `
-        <div class="p-2.5 bg-slate-950 border border-cyan-500/30 rounded text-slate-300 text-xs">
-          Prepared direct external search for <strong>"${cleanQ}"</strong>. Tap <strong> OS APP SHEET</strong> or <strong> COPY URL</strong> below!
-        </div>
-      `;
+        box.textContent = `No media results found for "${cleanQuery}".`;
+      } catch (error) { box.textContent = error?.message || 'Media search failed.'; showToast('Media search failed. Check your connection.', 'error'); }
     }
 
-    // Hook `fetchAndRenderLiveMediaResults` into `dispatchRealExternalApp` whenever YouTube or Spotify/Music is requested!
+        // Hook `fetchAndRenderLiveMediaResults` into `dispatchRealExternalApp` whenever YouTube or Spotify/Music is requested!
     const origDispatch = dispatchRealExternalApp;
     dispatchRealExternalApp = function(appName, webUrl, nativeUri, description, sharePayloadText = '') {
       origDispatch(appName, webUrl, nativeUri, description, sharePayloadText);
@@ -8196,11 +8003,7 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
     }
 
     // 7. OPENCLAW MEMORY TIMELINE (TODAY / YESTERDAY COLLAPSIBLE DAYS) + SCHEDULE CRON + SKILLS BROWSER
-    let openClawMemories = [
-      { day: 'TODAY', title: '## GitHub Repo Integration (OpenClaw + Archer)', detail: 'Integrated 3D Three.js Orb, 3-Layer Audio Visualizer, 6-Color Hue Palette, Power Save Mode, and Multi-Timers.' },
-      { day: 'TODAY', title: '## Real I/O & External App Verification', detail: 'Verified real Clipboard Copy, File Share/Download Drawer, and zero fake inbuilt WhatsApp/YouTube traps.' },
-      { day: 'YESTERDAY', title: '## Mark VII Tactical CAD Architecture', detail: 'Calibrated S.H.I.E.L.D. wireframe bust, 24-blade turbine, and Surat GPS telemetry.' }
-    ];
+    let openClawMemories = [];
     let showArchivedMemories = false;
 
     function renderOpenClawMemoryTimeline() {
@@ -8246,25 +8049,14 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
     if (moreMemBtn) {
       moreMemBtn.addEventListener('click', () => {
         showArchivedMemories = !showArchivedMemories;
-        if (showArchivedMemories && !openClawMemories.some(m => m.day.startsWith('ARCHIVE'))) {
-          openClawMemories.push({
-            day: 'ARCHIVE // 2026-11',
-            title: '## Initial Stark OS Kernel Boot',
-            detail: 'Initialized Web Audio API synthesizer, holographic particle matrix, and voice pipeline.'
-          });
-        }
         moreMemBtn.textContent = showArchivedMemories ? 'HIDE ARCHIVED DAYS ▴' : 'SHOW MORE ARCHIVED DAYS ▾';
         renderOpenClawMemoryTimeline();
       });
     }
 
     // OpenClaw Cron Jobs with Enable/Disable Switches
-    let openClawCronJobs = [
-      { id: 1, name: 'Morning Brief & Surat Weather Sync', schedule: '0 8 * * *', enabled: true, cmd: 'Live weather telemetry' },
-      { id: 2, name: 'Mark VII Diagnostics & Battery Check', schedule: '*/30 * * * *', enabled: true, cmd: 'Run full system diagnostic' },
-      { id: 3, name: 'Calendar & Directives Audit', schedule: '0 */4 * * *', enabled: true, cmd: "Check today's schedule" },
-      { id: 4, name: 'Nightly S.H.I.E.L.D. Perimeter Scan', schedule: '0 23 * * *', enabled: false, cmd: 'Search Cybersecurity' }
-    ];
+    // This panel stores local workflow shortcuts only; it is not a background scheduler.
+    let openClawCronJobs = [];
 
     function renderOpenClawCronList() {
       const box = document.getElementById('openclaw-cron-list');
@@ -8324,7 +8116,7 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
         });
         input.value = '';
         renderOpenClawCronList();
-        speakText(`Scheduled new Cron job: ${name}`);
+        speakText(`Saved local workflow shortcut: ${name}`);
       });
     }
 
@@ -8380,18 +8172,18 @@ You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an autonomous tact
       if (!files || files.length === 0) return;
       Array.from(files).forEach(file => {
         const sizeKB = (file.size / 1024).toFixed(1);
-        appendMessage('USER', ` Attached file: **${file.name}** (${sizeKB} KB, ${file.type || 'binary'})`);
+        appendMessage('USER', ` Attached file: **${escapeHTML(file.name)}** (${sizeKB} KB, ${file.type || 'binary'})`);
         if (file.type.startsWith('text/') || /\.(json|md|txt|js|py|html|css|csv)$/i.test(file.name)) {
           const reader = new FileReader();
           reader.onload = () => {
             const snippet = String(reader.result || '').slice(0, 320);
-            appendMessage('J.A.R.V.I.S.', ` **OPENCLAW FILE INSPECTOR (${file.name})**:\n\`\`\`\n${snippet}${snippet.length >= 320 ? '...' : ''}\n\`\`\``, 'FILE ATTACHED');
-            speakText(`File ${file.name} uploaded and indexed into your workspace, Sir.`);
+            appendMessage('J.A.R.V.I.S.', ` **OPENCLAW FILE INSPECTOR (${escapeHTML(file.name)})**:\n\`\`\`\n${snippet}${snippet.length >= 320 ? '...' : ''}\n\`\`\``, 'FILE ATTACHED');
+            speakText(`File ${escapeHTML(file.name)} uploaded and indexed into your workspace, Sir.`);
           };
           reader.readAsText(file);
         } else {
-          appendMessage('J.A.R.V.I.S.', ` **OPENCLAW MEDIA ATTACHMENT (${file.name})**: Loaded ${sizeKB} KB asset into session memory.`, 'MEDIA ATTACHED');
-          speakText(`Attached ${file.name} (${sizeKB} kilobytes) into your session.`);
+          appendMessage('J.A.R.V.I.S.', ` **OPENCLAW MEDIA ATTACHMENT (${escapeHTML(file.name)})**: Loaded ${sizeKB} KB asset into session memory.`, 'MEDIA ATTACHED');
+          speakText(`Attached ${escapeHTML(file.name)} (${sizeKB} kilobytes) into your session.`);
         }
       });
     }
