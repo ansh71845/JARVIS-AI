@@ -498,7 +498,7 @@ img,canvas,iframe,video,svg{max-width:100%}input,select,textarea,button{max-widt
       <button data-hub="phone" class="open-hub-tab top-dock-tab px-2.5 py-1 text-emerald-300 font-bold border border-emerald-500/40"> PHONE // CALLS</button>
       <button data-hub="enjoy" class="open-hub-tab top-dock-tab px-2.5 py-1 text-amber-300 font-bold border border-amber-500/40"> ENJOYING ZONE</button>
       <button data-hub="calendar" class="open-hub-tab top-dock-tab px-2.5 py-1 text-slate-200 font-semibold">CALENDAR</button>
-      <button data-hub="mail" class="open-hub-tab top-dock-tab px-2.5 py-1 text-slate-200 font-semibold">COMMS // MAIL</button>
+      <button data-hub="mail" class="open-hub-tab top-dock-tab px-2.5 py-1 text-slate-200 font-semibold">LOCAL MESSAGE NOTES</button>
       <button data-hub="tasks" class="open-hub-tab top-dock-tab px-2.5 py-1 text-slate-200 font-semibold">DIRECTIVES</button>
       <button data-hub="notes" class="open-hub-tab top-dock-tab px-2.5 py-1 text-slate-200 font-semibold">LAB NOTES</button>
       <button data-hub="protocols" class="open-hub-tab top-dock-tab px-2.5 py-1 text-emerald-300 font-semibold">PROT // MACROS</button>
@@ -949,7 +949,7 @@ img,canvas,iframe,video,svg{max-width:100%}input,select,textarea,button{max-widt
                 <span id="welcome-time" class="text-amber-400">STEP 3 // FULL CAD &amp; APP WORKSPACE ONLINE</span>
               </div>
               <div class="p-2 mt-0.5 bg-[#070b12] border border-cyan-500/30 text-slate-200 text-xs leading-relaxed">
-                Mark VII wireframe geometry, turbine schematics, 3D wireframe armor projections, and Web Audio HUD sound effects are online. Click <strong class="text-cyan-300">CALENDAR</strong>, <strong class="text-cyan-300">COMMS // MAIL</strong>, <strong class="text-cyan-300">DIRECTIVES</strong>, or <strong class="text-cyan-300">LAB NOTES</strong> to add or edit real persistent items, or ask any world-knowledge question below.
+                Mark VII wireframe geometry, turbine schematics, 3D wireframe armor projections, and Web Audio HUD sound effects are online. Click <strong class="text-cyan-300">CALENDAR</strong>, <strong class="text-cyan-300">LOCAL MESSAGE NOTES</strong>, <strong class="text-cyan-300">DIRECTIVES</strong>, or <strong class="text-cyan-300">LAB NOTES</strong> to add or edit real persistent items, or ask any world-knowledge question below.
               </div>
             </div>
           </div>
@@ -1007,12 +1007,12 @@ img,canvas,iframe,video,svg{max-width:100%}input,select,textarea,button{max-widt
           <div class="space-y-1 border-l border-cyan-500/20 pl-2">
             <div class="text-amber-400 font-bold text-center">DISK ARRAY</div>
             <div>
-              <div class="flex justify-between text-[9px]"><span>C:\ OS</span><span class="text-cyan-300">47.4 / 97.7 GB</span></div>
-              <div class="w-full bg-slate-900 h-1.5 border border-cyan-500/30 mt-0.5"><div class="bg-cyan-400 h-full w-[48%]"></div></div>
+              <div class="flex justify-between text-[9px]"><span>C:\ OS</span><span class="text-cyan-300">NOT REPORTED</span></div>
+              <div class="w-full bg-slate-900 h-1.5 border border-cyan-500/30 mt-0.5"><div class="bg-cyan-400 h-full w-0"></div></div>
             </div>
             <div>
-              <div class="flex justify-between text-[9px]"><span>D:\ VAULT</span><span class="text-emerald-400">ENCRYPTED</span></div>
-              <div class="w-full bg-slate-900 h-1.5 border border-emerald-500/30 mt-0.5"><div class="bg-emerald-400 h-full w-[24%]"></div></div>
+              <div class="flex justify-between text-[9px]"><span>LOCAL VAULT</span><span class="text-emerald-400">NOT CONFIGURED</span></div>
+              <div class="w-full bg-slate-900 h-1.5 border border-emerald-500/30 mt-0.5"><div class="bg-emerald-400 h-full w-0"></div></div>
             </div>
           </div>
         </div>
@@ -1092,7 +1092,7 @@ img,canvas,iframe,video,svg{max-width:100%}input,select,textarea,button{max-widt
         <button data-tab="phone" class="hub-tab-btn px-3 py-1.5 bg-emerald-500 text-black font-bold"> PHONE &amp; CALLS</button>
         <button data-tab="enjoy" class="hub-tab-btn px-3 py-1.5 bg-slate-900 border border-cyan-500/30 text-amber-300 font-bold"> ENJOYING ZONE</button>
         <button data-tab="calendar" class="hub-tab-btn px-3 py-1.5 bg-slate-900 border border-cyan-500/30 text-cyan-300"> CALENDAR EVENTS</button>
-        <button data-tab="mail" class="hub-tab-btn px-3 py-1.5 bg-slate-900 border border-cyan-500/30 text-cyan-300"> COMMS // MAIL</button>
+        <button data-tab="mail" class="hub-tab-btn px-3 py-1.5 bg-slate-900 border border-cyan-500/30 text-cyan-300"> LOCAL MESSAGE NOTES</button>
         <button data-tab="tasks" class="hub-tab-btn px-3 py-1.5 bg-slate-900 border border-cyan-500/30 text-cyan-300"> DIRECTIVES &amp; TASKS</button>
         <button data-tab="notes" class="hub-tab-btn px-3 py-1.5 bg-slate-900 border border-cyan-500/30 text-cyan-300"> LAB NOTES</button>
         <button data-tab="protocols" class="hub-tab-btn px-3 py-1.5 bg-slate-900 border border-cyan-500/30 text-emerald-300"> PROTOCOLS &amp; BACKUP</button>
@@ -1114,12 +1114,12 @@ img,canvas,iframe,video,svg{max-width:100%}input,select,textarea,button{max-widt
         <div id="hub-cal-list" class="space-y-1.5 font-mono-hud text-xs"></div>
       </div>
 
-      <!-- TAB 2: COMMS // MAIL WORKSPACE -->
+      <!-- TAB 2: LOCAL MESSAGE NOTES WORKSPACE -->
       <div id="hub-panel-mail" class="hub-panel hidden flex-1 overflow-y-auto space-y-3">
         <form id="add-mail-form" class="grid grid-cols-1 sm:grid-cols-12 gap-2 bg-black/60 p-2.5 border border-amber-500/25 font-mono-hud text-xs">
           <input type="text" id="mail-to-input" placeholder="Recipient (e.g. Pepper Potts)" required class="sm:col-span-4 px-2.5 py-1.5 bg-slate-950 border border-cyan-500/40 text-cyan-200 focus:outline-none">
-          <input type="text" id="mail-sub-input" placeholder="Encrypted Transmission Subject / Message..." required class="sm:col-span-5 px-2.5 py-1.5 bg-slate-950 border border-cyan-500/40 text-cyan-200 focus:outline-none">
-          <button type="submit" class="sm:col-span-3 px-3 py-1.5 bg-amber-500 hover:bg-cyan-400 text-black font-display-hud font-bold">DISPATCH</button>
+          <input type="text" id="mail-sub-input" placeholder="Local message note or draft..." required class="sm:col-span-5 px-2.5 py-1.5 bg-slate-950 border border-cyan-500/40 text-cyan-200 focus:outline-none">
+          <button type="submit" class="sm:col-span-3 px-3 py-1.5 bg-amber-500 hover:bg-cyan-400 text-black font-display-hud font-bold">SAVE LOCAL NOTE</button>
         </form>
         <div id="hub-mail-list" class="space-y-1.5 font-mono-hud text-xs"></div>
       </div>
@@ -1136,7 +1136,7 @@ img,canvas,iframe,video,svg{max-width:100%}input,select,textarea,button{max-widt
       <!-- TAB 4: LAB NOTES SCRATCHPAD -->
       <div id="hub-panel-notes" class="hub-panel hidden flex-1 flex flex-col space-y-2">
         <div class="text-[11px] font-mono-hud text-slate-400 flex justify-between">
-          <span>PERSISTENT ENCRYPTED SCRATCHPAD (AUTO-SAVED TO LOCAL STORAGE)</span>
+          <span>LOCAL SCRATCHPAD (AUTO-SAVED TO THIS BROWSER; NOT ENCRYPTED)</span>
           <span id="notes-save-indicator" class="text-emerald-400">SAVED</span>
         </div>
         <textarea id="lab-notes-area" rows="7" class="w-full flex-1 p-3 bg-black border border-cyan-500/40 text-cyan-200 font-mono-hud text-xs focus:border-amber-400 focus:outline-none" placeholder="Log engineering calculations, armor telemetry notes, or project ideas..."></textarea>
@@ -1241,7 +1241,7 @@ img,canvas,iframe,video,svg{max-width:100%}input,select,textarea,button{max-widt
                 <button type="submit" class="px-2.5 py-1 bg-cyan-500 hover:bg-amber-400 text-black font-display-hud font-bold">EVAL</button>
               </form>
               <div id="calc-result-box" class="p-2 bg-slate-950 border border-cyan-500/20 text-amber-300 text-xs">
-                RESULT: 452.38896 GJ/s
+                Enter an expression to calculate a result.
               </div>
             </div>
           </div>
@@ -1334,18 +1334,15 @@ img,canvas,iframe,video,svg{max-width:100%}input,select,textarea,button{max-widt
           <div class="flex items-center justify-between border-b border-emerald-500/30 pb-1.5">
             <div class="flex items-center space-x-2">
               <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
-              <span class="font-display-hud text-sm text-emerald-300">WHATSAPP ENCRYPTED COMMS // IN-APP CLIENT</span>
+              <span class="font-display-hud text-sm text-emerald-300">WHATSAPP EXTERNAL HANDOFF</span>
             </div>
             <button type="button" id="try-native-wa-btn" class="px-2 py-0.5 bg-emerald-950 border border-emerald-400 text-emerald-200 hover:bg-emerald-500 hover:text-black text-[10px]">
-               LAUNCH NATIVE WHATSAPP.EXE
+               TRY WHATSAPP HANDOFF
             </button>
           </div>
           <div id="inapp-wa-chatlog" class="h-36 overflow-y-auto space-y-1.5 p-2 bg-black/80 border border-emerald-500/20 text-xs">
             <div class="p-1.5 bg-emerald-950/40 border-l-2 border-emerald-400 text-emerald-100">
-              <strong class="text-emerald-400">Pepper Potts (10:15):</strong> Tony, the Stark Expo keynote slides are ready in your Drive.
-            </div>
-            <div class="p-1.5 bg-emerald-950/40 border-l-2 border-emerald-400 text-emerald-100">
-              <strong class="text-emerald-400">Rhodey // War Machine (10:28):</strong> Satellite perimeter over Surat is green.
+              <span class="text-slate-400">No WhatsApp account is connected. This panel cannot read chat history; message drafts open in the external WhatsApp app.</span>
             </div>
           </div>
           <div class="flex space-x-1.5">
@@ -1572,7 +1569,7 @@ return `Total Repulsor Thrust: ${thrust} kN | Location: ${state.location.city}`;
                 Dial any phone number on the keypad, add your own contacts below, or say <strong class="text-cyan-300">"Call [Number/Name]"</strong> in the top search bar!
               </p>
               <div class="pt-1 border-t border-cyan-500/20 flex justify-between text-[10px]">
-                <span class="text-slate-400">UPLINK: ENCRYPTED VOICE</span>
+                <span class="text-slate-400">PHONE APP HANDOFF</span>
                 <a id="real-tel-link" href="tel:" class="text-amber-400 hover:underline"> DIAL ON REAL PHONE ↗</a>
               </div>
             </div>
@@ -1808,15 +1805,15 @@ return `Total Repulsor Thrust: ${thrust} kN | Location: ${state.location.city}`;
               <div class="grid grid-cols-3 gap-2.5 text-center">
                 <div class="p-2.5 bg-slate-950 border border-cyan-500/30 rounded">
                   <div class="text-[10px] text-slate-400">BITCOIN (BTC)</div>
-                  <div id="mkt-btc-val" class="text-sm font-bold text-amber-400 mt-0.5">$88,420</div>
+                  <div id="mkt-btc-val" class="text-sm font-bold text-amber-400 mt-0.5">NOT AVAILABLE</div>
                 </div>
                 <div class="p-2.5 bg-slate-950 border border-cyan-500/30 rounded">
                   <div class="text-[10px] text-slate-400">ETHEREUM (ETH)</div>
-                  <div id="mkt-eth-val" class="text-sm font-bold text-cyan-300 mt-0.5">$3,180</div>
+                  <div id="mkt-eth-val" class="text-sm font-bold text-cyan-300 mt-0.5">NOT AVAILABLE</div>
                 </div>
                 <div class="p-2.5 bg-slate-950 border border-cyan-500/30 rounded">
                   <div class="text-[10px] text-slate-400">USD  INR</div>
-                  <div id="mkt-inr-val" class="text-sm font-bold text-emerald-400 mt-0.5">₹84.40</div>
+                  <div id="mkt-inr-val" class="text-sm font-bold text-emerald-400 mt-0.5">NOT AVAILABLE</div>
                 </div>
               </div>
               <div id="market-status-line" class="text-[10px] text-slate-400">
