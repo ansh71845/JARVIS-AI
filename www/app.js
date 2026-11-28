@@ -1445,25 +1445,57 @@
     }
 
     async function fetchLiveWeather() {
-      const lat = Number(state.location?.lat), lon = Number(state.location?.lon);
+      const lat = state.location?.lat;
+      const lon = state.location?.lon;
       const city = state.location?.city || 'selected location';
-      const temp = document.getElementById('env-temp'), wind = document.getElementById('env-wind');
-      if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-        if (temp) temp.textContent = 'NOT SET'; if (wind) wind.textContent = 'NOT SET';
+      const temp = document.getElementById('env-temp');
+      const wind = document.getElementById('env-wind');
+      const humidity = document.getElementById('env-humidity');
+      const condition = document.getElementById('env-condition');
+      const hasCoordinates = typeof lat === 'number' && Number.isFinite(lat) && typeof lon === 'number' && Number.isFinite(lon);
+      if (!hasCoordinates) {
+        if (temp) temp.textContent = 'NOT SET';
+        if (wind) wind.textContent = 'NOT SET';
+        if (humidity) humidity.textContent = 'NOT SET';
+        if (condition) condition.textContent = 'NOT SET';
         return 'Weather is not loaded. Choose a city or request location access.';
       }
       try {
-        const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
-        if (!response.ok) throw new Error(`Weather provider returned HTTP ${response.status}`);
+        const endpoint = new URL('https://api.open-meteo.com/v1/forecast');
+        endpoint.searchParams.set('latitude', String(lat));
+        endpoint.searchParams.set('longitude', String(lon));
+        endpoint.searchParams.set('current', 'temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code');
+        endpoint.searchParams.set('wind_speed_unit', 'kmh');
+        endpoint.searchParams.set('timezone', 'auto');
+        const response = await fetch(endpoint.toString(), { cache: 'no-store' });
+        if (!response.ok) throw new Error('Weather provider returned HTTP ' + response.status);
         const data = await response.json();
-        if (!data?.current_weather) throw new Error('Weather data is unavailable.');
-        const current = data.current_weather;
-        if (temp) temp.textContent = `${Math.round(current.temperature)}°C`;
-        if (wind) wind.textContent = `${current.windspeed} km/h`;
-        return `${city} weather: ${current.temperature}°C, wind ${current.windspeed} km/h. Source: Open-Meteo.`;
+        const current = data?.current;
+        if (!current || typeof current.temperature_2m !== 'number') throw new Error('Current weather data is unavailable.');
+        const weatherCodes = {
+          0: 'Clear sky', 1: 'Mainly clear', 2: 'Partly cloudy', 3: 'Overcast',
+          45: 'Fog', 48: 'Freezing fog', 51: 'Light drizzle', 53: 'Drizzle', 55: 'Dense drizzle',
+          56: 'Freezing drizzle', 57: 'Dense freezing drizzle', 61: 'Light rain', 63: 'Rain',
+          65: 'Heavy rain', 66: 'Freezing rain', 67: 'Heavy freezing rain', 71: 'Light snow',
+          73: 'Snow', 75: 'Heavy snow', 77: 'Snow grains', 80: 'Rain showers',
+          81: 'Heavy showers', 82: 'Violent showers', 85: 'Snow showers', 86: 'Heavy snow showers',
+          95: 'Thunderstorm', 96: 'Thunderstorm with hail', 99: 'Severe thunderstorm with hail'
+        };
+        const tempText = Math.round(current.temperature_2m) + '°C';
+        const windText = Number.isFinite(Number(current.wind_speed_10m)) ? Number(current.wind_speed_10m).toFixed(1) + ' km/h' : 'NOT REPORTED';
+        const humidityText = current.relative_humidity_2m !== null && Number.isFinite(Number(current.relative_humidity_2m)) ? Math.round(Number(current.relative_humidity_2m)) + '%' : 'NOT REPORTED';
+        const conditionText = Number.isFinite(Number(current.weather_code)) ? (weatherCodes[current.weather_code] || 'CONDITION NOT MAPPED') : 'NOT REPORTED';
+        if (temp) temp.textContent = tempText;
+        if (wind) wind.textContent = windText;
+        if (humidity) humidity.textContent = humidityText;
+        if (condition) condition.textContent = conditionText;
+        return city + ' weather: ' + tempText + ', humidity ' + humidityText + ', wind ' + windText + ', ' + conditionText + '. Source: Open-Meteo.';
       } catch (error) {
-        if (temp) temp.textContent = 'UNAVAILABLE'; if (wind) wind.textContent = 'UNAVAILABLE';
-        return `Weather data is unavailable for ${city}. ${error?.message || 'Check your connection.'}`;
+        if (temp) temp.textContent = 'UNAVAILABLE';
+        if (wind) wind.textContent = 'UNAVAILABLE';
+        if (humidity) humidity.textContent = 'UNAVAILABLE';
+        if (condition) condition.textContent = 'UNAVAILABLE';
+        return 'Weather data is unavailable for ' + city + '. ' + (error?.message || 'Check your connection.');
       }
     }
 
@@ -2465,32 +2497,42 @@
 
 
     // =========================================================================
-    // STEP 5: PRECISION GPS-FIRST LOCATION ENGINE (NO ISP GATEWAY MISMATCH)
+    // STEP 5: CONSENT-BASED LOCATION ENGINE
     // =========================================================================
-    async function syncLocationAndWeather(cityName, lat, lon, countryCode = '', sourceTag = 'GPS/AUTO', saveManual = false) {
-      state.location = { city: cityName, lat: Number(lat), lon: Number(lon), country: countryCode };
-      const labelStr = countryCode ? `${cityName.toUpperCase()}, ${countryCode.toUpperCase()}` : cityName.toUpperCase();
+    async function syncLocationAndWeather(cityName, lat, lon, countryCode = '', sourceTag = 'MANUAL', saveManual = false, accuracyMeters = null) {
+      const numericLat = Number(lat);
+      const numericLon = Number(lon);
+      if (!cityName || !Number.isFinite(numericLat) || !Number.isFinite(numericLon) || Math.abs(numericLat) > 90 || Math.abs(numericLon) > 180) {
+        throw new Error('A valid city and coordinate pair are required.');
+      }
+      state.location = { city: String(cityName), lat: numericLat, lon: numericLon, country: String(countryCode || '') };
+      const labelStr = countryCode ? String(cityName).toUpperCase() + ', ' + String(countryCode).toUpperCase() : String(cityName).toUpperCase();
+      const latitudeLabel = Math.abs(numericLat).toFixed(4) + '°' + (numericLat >= 0 ? 'N' : 'S');
+      const longitudeLabel = Math.abs(numericLon).toFixed(4) + '°' + (numericLon >= 0 ? 'E' : 'W');
+      const coordinateLabel = latitudeLabel + ', ' + longitudeLabel;
       const envCityEl = document.getElementById('env-city');
       const globeLocEl = document.getElementById('globe-loc-label');
       const locReadoutEl = document.getElementById('loc-status-readout');
-
       if (envCityEl) envCityEl.textContent = labelStr;
-      if (globeLocEl) globeLocEl.textContent = `${cityName.toUpperCase()} // ${Number(lat).toFixed(2)}°N`;
-      if (locReadoutEl) locReadoutEl.textContent = `[${sourceTag}] ${labelStr} (${Number(lat).toFixed(3)}, ${Number(lon).toFixed(3)})`;
-
-      if (saveManual) {
-        try {
-          localStorage.setItem('jarvis_manual_location_v2', JSON.stringify(state.location));
-        } catch (e) {}
+      if (globeLocEl) globeLocEl.textContent = String(cityName).toUpperCase() + ' // ' + coordinateLabel;
+      if (locReadoutEl) {
+        const accuracyLabel = accuracyMeters !== null && accuracyMeters !== undefined && Number.isFinite(Number(accuracyMeters)) ? ' // accuracy ±' + Math.round(Number(accuracyMeters)) + ' m' : '';
+        const sessionLabel = sourceTag === 'GPS FIX' ? ' // SESSION ONLY' : '';
+        locReadoutEl.textContent = '[' + sourceTag + '] ' + labelStr + ' (' + coordinateLabel + ')' + accuracyLabel + sessionLabel;
       }
-
+      if (saveManual) {
+        try { localStorage.setItem('jarvis_manual_location_v2', JSON.stringify(state.location)); } catch (e) {}
+      }
       await fetchLiveWeather();
+      return true;
     }
 
-    // Reverse-geocode exact latitude/longitude into the true city name
+    // Reverse geocoding is performed only after the user explicitly requests a GPS fix.
     async function reverseGeocodeCoords(lat, lon) {
       try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&addressdetails=1`);
+        const url = 'https://nominatim.openstreetmap.org/reverse?format=json&lat=' + encodeURIComponent(lat) + '&lon=' + encodeURIComponent(lon) + '&zoom=10&addressdetails=1';
+        const res = await fetch(url, { cache: 'no-store' });
+        if (!res.ok) throw new Error('Reverse geocoder returned HTTP ' + res.status);
         const data = await res.json();
         const addr = data?.address || {};
         const city = addr.city || addr.town || addr.municipality || addr.county || addr.state_district || addr.state;
@@ -2498,109 +2540,103 @@
         if (city) return { city, country };
       } catch (e) {}
       try {
-        const res2 = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);
-        const data2 = await res2.json();
-        const city2 = data2?.city || data2?.locality || data2?.principalSubdivision;
-        const country2 = data2?.countryCode || '';
-        if (city2) return { city: city2, country: country2 };
+        const url = 'https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=' + encodeURIComponent(lat) + '&longitude=' + encodeURIComponent(lon) + '&localityLanguage=en';
+        const res = await fetch(url, { cache: 'no-store' });
+        if (!res.ok) throw new Error('Fallback reverse geocoder returned HTTP ' + res.status);
+        const data = await res.json();
+        const city = data?.city || data?.locality || data?.principalSubdivision;
+        const country = data?.countryCode || '';
+        if (city) return { city, country };
       } catch (e) {}
       return null;
     }
 
-    // Purge any stale ISP-cached city from earlier versions (which cached "Ahmedabad" from ISP routing)
+    // Remove the legacy ISP-derived location cache; it was not a reliable device location.
     try { localStorage.removeItem('jarvis_saved_location'); } catch (e) {}
 
-    async function autoDetectVisitorLocation(forceGpsPrompt = false) {
-      // 1. If the user manually locked a specific city earlier, honor it unless they clicked Auto-Detect
+    function autoDetectVisitorLocation(forceGpsPrompt = false) {
+      const status = document.getElementById('loc-status-readout');
       if (!forceGpsPrompt) {
         try {
-          const manualSaved = localStorage.getItem('jarvis_manual_location_v2');
-          if (manualSaved) {
-            const parsed = JSON.parse(manualSaved);
-            if (parsed && parsed.city && parsed.lat != null) {
-              await syncLocationAndWeather(parsed.city, parsed.lat, parsed.lon, parsed.country || '', 'MANUAL LOCK', false);
-              return;
+          const saved = localStorage.getItem('jarvis_manual_location_v2');
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (parsed && parsed.city && parsed.lat !== null && parsed.lon !== null && Number.isFinite(Number(parsed.lat)) && Number.isFinite(Number(parsed.lon))) {
+              syncLocationAndWeather(parsed.city, Number(parsed.lat), Number(parsed.lon), parsed.country || '', 'SAVED CITY', false);
+              return true;
             }
           }
         } catch (e) {}
-      } else {
-        try { localStorage.removeItem('jarvis_manual_location_v2'); } catch (e) {}
+        return false;
       }
-
-      // 2. Immediately sync with the verified local node coordinates (Surat, IN 21.1702°N, 72.8311°E)
-      //    so the HUD never flashes an inaccurate ISP backbone hub like Ahmedabad on load.
-      await syncLocationAndWeather(state.location.city || 'Surat', state.location.lat || 21.1702, state.location.lon || 72.8311, 'IN', 'LOCAL NODE', false);
-
-      // 3. Request High-Accuracy Hardware GPS / Wi-Fi Triangulation from the browser.
-      //    When any user opens the app and allows location, exact device coordinates override everything.
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          async (pos) => {
-            const { latitude, longitude } = pos.coords;
-            const resolved = await reverseGeocodeCoords(latitude, longitude);
-            const city = resolved?.city || state.location.city || 'GPS Node';
-            const country = resolved?.country || 'IN';
-            await syncLocationAndWeather(city, latitude, longitude, country, 'EXACT GPS', false);
-            if (forceGpsPrompt) showToast(`Exact GPS Locked: ${city.toUpperCase()}`);
-          },
-          async () => {
-            // If GPS permission is blocked/unavailable in the sandboxed iframe AND user isn't in Indian Standard Time,
-            // fall back to multi-provider IP lookup for international visitors.
-            const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
-            const isIndianTz = tz.includes('Calcutta') || tz.includes('Kolkata') || (new Date().getTimezoneOffset() === -330);
-            if (!isIndianTz) {
-              try {
-                // IP-based geolocation is intentionally disabled.
-              } catch (e) {}
-            }
-            if (forceGpsPrompt) {
-              showToast(`Telemetry Calibrated: ${state.location.city.toUpperCase()}`);
-            }
-          },
-          { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
-        );
+      if (!navigator.geolocation) {
+        if (status) status.textContent = 'GPS is unavailable in this browser. Search for a city instead.';
+        showToast('GPS is unavailable. Search for a city instead.', 'error');
+        return false;
       }
+      const disclosure = 'JARVIS will request a device GPS fix. If granted, your coordinates are sent to OpenStreetMap Nominatim (or BigDataCloud as a fallback) for a city label and to Open-Meteo for weather. GPS coordinates stay in memory for this session and are not saved by JARVIS. Continue?';
+      if (typeof window.confirm === 'function' && !window.confirm(disclosure)) {
+        if (status) status.textContent = 'GPS request cancelled. Existing location was kept.';
+        return false;
+      }
+      if (status) status.textContent = 'Waiting for Android/browser GPS permission and a location fix...';
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const latitude = position.coords.latitude;
+          const longitude = position.coords.longitude;
+          const resolved = await reverseGeocodeCoords(latitude, longitude);
+          const city = resolved?.city || 'GPS LOCATION';
+          const country = resolved?.country || '';
+          await syncLocationAndWeather(city, latitude, longitude, country, 'GPS FIX', false, position.coords.accuracy);
+          showToast('GPS location updated for this session.');
+        },
+        (error) => {
+          const reason = error?.code === 1 ? 'Permission denied.' : error?.code === 2 ? 'Position unavailable.' : error?.code === 3 ? 'GPS request timed out.' : 'GPS request failed.';
+          const retained = state.location?.city ? ' Keeping the selected location: ' + state.location.city + '.' : ' No location is set; search for a city instead.';
+          if (status) status.textContent = reason + retained;
+          showToast(reason + retained, 'error');
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
+      );
+      return true;
     }
-    // Location is requested only when the user activates a location control.
 
     // Search Any City Worldwide via Open-Meteo Geocoding API (Manual Override)
     async function searchAndSetGlobalCity(cityName) {
-      const q = cityName.trim();
+      const q = String(cityName || '').trim();
       if (!q) return false;
       try {
-        const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=1&language=en&format=json`);
+        const endpoint = 'https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(q) + '&count=1&language=en&format=json';
+        const geoRes = await fetch(endpoint, { cache: 'no-store' });
+        if (!geoRes.ok) throw new Error('Geocoding provider returned HTTP ' + geoRes.status);
         const geoData = await geoRes.json();
         if (geoData?.results?.length > 0) {
           const place = geoData.results[0];
-          await syncLocationAndWeather(place.name, place.latitude, place.longitude, place.country_code || '', 'MANUAL SYNC', true);
+          await syncLocationAndWeather(place.name, place.latitude, place.longitude, place.country_code || '', 'MANUAL CITY', true);
           playHudSound('confirm');
-          showToast(`Location Telemetry Locked: ${place.name}, ${place.country || ''}`);
+          showToast('Location set to ' + place.name + ', ' + (place.country || '') + '.');
           return true;
-        } else {
-          showToast(`City "${q}" not found in global database.`);
         }
+        showToast('City not found: ' + q);
       } catch (e) {
-        showToast('Network error searching city coordinates.');
+        showToast('City search failed. Check your connection and try again.', 'error');
       }
       return false;
     }
 
-    document.getElementById('change-loc-btn').addEventListener('click', () => {
-      openHubModal('hololab');
-    });
-
-    document.getElementById('gps-detect-btn').addEventListener('click', () => {
+    document.getElementById('change-loc-btn')?.addEventListener('click', () => openHubModal('hololab'));
+    document.getElementById('gps-detect-btn')?.addEventListener('click', () => {
       playHudSound('chirp');
-      showToast('Acquiring High-Accuracy GPS & Local Node Telemetry...');
       autoDetectVisitorLocation(true);
     });
-
-    document.getElementById('city-search-form').addEventListener('submit', async (e) => {
+    document.getElementById('city-search-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const input = document.getElementById('city-search-input');
       const ok = await searchAndSetGlobalCity(input.value);
       if (ok) input.value = '';
     });
+    // Restore only a city the user previously selected; never prompt for GPS on page load.
+    autoDetectVisitorLocation(false);
 
     // --- INTERACTIVE 3D HOLOGRAPHIC CAD INSPECTOR (holo3dCanvas) ---
     const holo3dCanvas = document.getElementById('holo3dCanvas');
@@ -2795,23 +2831,105 @@
     // =========================================================================
     // STEP 6: REAL HARDWARE TELEMETRY, LIVE MIC FFT & EXTERNAL APP BRIDGES
     // =========================================================================
+    function refreshNetworkDiagnosticsOverview() {
+      const diagnostics = window.JarvisNetworkDiagnostics;
+      if (!diagnostics) {
+        const status = document.getElementById('network-diagnostics-status');
+        if (status) status.textContent = 'Network diagnostics module is unavailable.';
+        return null;
+      }
+      const snapshot = diagnostics.getConnectionSnapshot(navigator);
+      const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+      setText('network-link-state', snapshot.online ? 'ONLINE' : 'OFFLINE');
+      const types = [snapshot.type, snapshot.effectiveType].filter(Boolean);
+      setText('network-connection-type', types.length ? types.join(' / ').toUpperCase() : 'NOT REPORTED');
+      setText('network-downlink-est', snapshot.estimatedDownlinkMbps !== null ? '~' + snapshot.estimatedDownlinkMbps.toFixed(1) + ' Mbps (estimate)' : 'NOT REPORTED');
+      setText('network-rtt-est', snapshot.estimatedRttMs !== null ? '~' + Math.round(snapshot.estimatedRttMs) + ' ms (estimate)' : 'NOT REPORTED');
+      const hardwareNetwork = document.getElementById('hw-net-val');
+      if (hardwareNetwork) {
+        hardwareNetwork.textContent = (types.length ? types.join(' / ').toUpperCase() : 'NETWORK TYPE NOT REPORTED') + (snapshot.estimatedDownlinkMbps !== null ? ' // ~' + snapshot.estimatedDownlinkMbps.toFixed(1) + ' Mbps ESTIMATED' : ' // DOWNLINK NOT REPORTED');
+      }
+      return snapshot;
+    }
+
+    let revealedPublicIp = null;
+    const publicIpButton = document.getElementById('network-ip-btn');
+    const publicIpReadout = document.getElementById('masked-ip-display');
+    const networkStatus = document.getElementById('network-diagnostics-status');
+    if (publicIpButton) {
+      publicIpButton.addEventListener('click', async () => {
+        if (revealedPublicIp) {
+          revealedPublicIp = null;
+          if (publicIpReadout) publicIpReadout.textContent = 'HIDDEN BY DEFAULT';
+          publicIpButton.textContent = 'LOOK UP PUBLIC IP';
+          if (networkStatus) networkStatus.textContent = 'Public IP value cleared from the app display.';
+          return;
+        }
+        if (typeof window.confirm === 'function' && !window.confirm('This lookup contacts ipify. The provider can see your public source IP and request metadata. JARVIS will keep the result in memory only. Continue?')) return;
+        const diagnostics = window.JarvisNetworkDiagnostics;
+        if (!diagnostics) { if (networkStatus) networkStatus.textContent = 'Network diagnostics module is unavailable.'; return; }
+        publicIpButton.disabled = true;
+        publicIpButton.textContent = 'LOOKING UP...';
+        if (networkStatus) networkStatus.textContent = 'Requesting public IP from ipify...';
+        try {
+          const result = await diagnostics.lookupPublicIp();
+          revealedPublicIp = result.ip;
+          if (publicIpReadout) publicIpReadout.textContent = result.ip + ' (' + result.family + ')';
+          publicIpButton.textContent = 'HIDE PUBLIC IP';
+          if (networkStatus) networkStatus.textContent = 'Public IP lookup completed. The value is held in page memory only; hide it to clear the display.';
+        } catch (error) {
+          publicIpButton.textContent = 'LOOK UP PUBLIC IP';
+          if (publicIpReadout) publicIpReadout.textContent = 'LOOKUP FAILED';
+          if (networkStatus) networkStatus.textContent = 'Public IP lookup failed: ' + (error?.message || 'network request unavailable');
+        } finally {
+          publicIpButton.disabled = false;
+        }
+      });
+    }
+
+    const speedTestButton = document.getElementById('network-speed-btn');
+    if (speedTestButton) {
+      speedTestButton.addEventListener('click', async () => {
+        if (navigator.onLine === false) { if (networkStatus) networkStatus.textContent = 'You are offline. Reconnect before running the speed test.'; return; }
+        if (typeof window.confirm === 'function' && !window.confirm('Run a quick network test? It downloads about 1 MiB and uploads about 256 KiB to Cloudflare. Cloudflare receives your public source IP, connection metadata, and test traffic. Mobile data may be used. Continue?')) return;
+        const diagnostics = window.JarvisNetworkDiagnostics;
+        if (!diagnostics) { if (networkStatus) networkStatus.textContent = 'Network diagnostics module is unavailable.'; return; }
+        speedTestButton.disabled = true;
+        speedTestButton.textContent = 'TESTING...';
+        if (networkStatus) networkStatus.textContent = 'Measuring download and upload throughput...';
+        try {
+          const result = await diagnostics.runQuickSpeedTest();
+          const upload = document.getElementById('net-up');
+          const download = document.getElementById('net-down');
+          if (upload) upload.textContent = result.uploadMbps.toFixed(2) + ' Mbps';
+          if (download) download.textContent = result.downloadMbps.toFixed(2) + ' Mbps';
+          if (networkStatus) networkStatus.textContent = 'Quick estimate only. Download: ' + result.downloadBytes.toLocaleString() + ' bytes; upload: ' + result.uploadBytes.toLocaleString() + ' bytes. Results are not saved by JARVIS.';
+        } catch (error) {
+          if (networkStatus) networkStatus.textContent = 'Speed test unavailable: ' + (error?.message || 'provider or CORS request failed') + '. No result was recorded.';
+        } finally {
+          speedTestButton.disabled = false;
+          speedTestButton.textContent = 'RUN QUICK SPEED TEST';
+        }
+      });
+    }
+
+    window.addEventListener('online', refreshNetworkDiagnosticsOverview);
+    window.addEventListener('offline', refreshNetworkDiagnosticsOverview);
+    const connectionDetails = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (connectionDetails && typeof connectionDetails.addEventListener === 'function') {
+      connectionDetails.addEventListener('change', refreshNetworkDiagnosticsOverview);
+    }
+    refreshNetworkDiagnosticsOverview();
+
     async function syncRealDeviceHardware() {
       const cores = Number.isFinite(navigator.hardwareConcurrency) ? navigator.hardwareConcurrency : null;
       const memory = Number.isFinite(navigator.deviceMemory) ? navigator.deviceMemory : null;
       const coresEl = document.getElementById('hw-cores-val');
       const memoryEl = document.getElementById('hw-memory-val');
-      const netEl = document.getElementById('hw-net-val');
       if (coresEl) coresEl.textContent = cores ? `${cores} LOGICAL CORES` : 'NOT REPORTED';
       if (memoryEl) memoryEl.textContent = memory ? `APPROX. ${memory} GB DEVICE MEMORY` : 'NOT REPORTED';
 
-      const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-      if (netEl) {
-        if (connection) {
-          const type = connection.effectiveType ? connection.effectiveType.toUpperCase() : 'TYPE NOT REPORTED';
-          const downlink = Number.isFinite(connection.downlink) ? `${connection.downlink} Mbps ESTIMATED DOWNLINK` : 'DOWNLINK NOT REPORTED';
-          netEl.textContent = `${type} // ${downlink}`;
-        } else netEl.textContent = 'NOT REPORTED';
-      }
+      refreshNetworkDiagnosticsOverview();
 
       const batteryReadout = document.getElementById('real-battery-readout');
       const batteryValue = document.getElementById('hw-battery-val');
