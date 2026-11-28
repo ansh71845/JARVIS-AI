@@ -117,7 +117,7 @@
     }, timeoutMs);
     if (!download.bytes) throw new Error('Download test returned an empty payload.');
 
-    const uploadPayload = opts.uploadPayload instanceof Uint8Array ? opts.uploadBytes: createUploadPayload(uploadBytes);
+    const uploadPayload = opts.uploadPayload instanceof Uint8Array ? opts.uploadPayload : createUploadPayload(uploadBytes);
     const upload = await withTimeout(async signal => {
       const start = now();
       const request = {
@@ -140,7 +140,7 @@
       uploadMbps: calculateMbps(upload.bytes, upload.elapsedMs),
       downloadBytes: download.bytes,
       uploadBytes: upload.bytes,
-      downloadDlapsedMs: download.elapsedMs,
+      downloadElapsedMs: download.elapsedMs,
       uploadElapsedMs: upload.elapsedMs,
       provider: 'Cloudflare speed test endpoints',
       kind: 'quick estimate'
