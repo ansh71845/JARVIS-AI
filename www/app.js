@@ -902,24 +902,38 @@
         globeCtx.stroke();
       });
 
-      // Surat Callout Projection Lines (Exact match to "Surat" & IP wedge in screenshot)
-      globeCtx.strokeStyle = '#e2e8f0';
-      globeCtx.lineWidth = 1;
-      globeCtx.beginPath();
-      globeCtx.moveTo(gcx + 12, gcy - 8);
-      globeCtx.lineTo(gcx + 68, gcy - 22);
-      globeCtx.moveTo(gcx + 12, gcy - 8);
-      globeCtx.lineTo(gcx + 68, gcy + 14);
-      globeCtx.stroke();
-
-      globeCtx.fillStyle = '#ff7b00';
-      globeCtx.beginPath();
-      globeCtx.arc(gcx + 12, gcy - 8, 3, 0, Math.PI * 2);
-      globeCtx.fill();
-
-      globeCtx.fillStyle = '#00e5ff';
-      globeCtx.font = '10px "Share Tech Mono", monospace';
-      globeCtx.fillText((state.location.city || 'GLOBAL').slice(0, 9), gcx + 36, gcy - 12);
+      // Approximate front-hemisphere marker on the rotating wireframe; this is not a street map.
+      const locationLatitude = state.location?.lat;
+      const locationLongitude = state.location?.lon;
+      const hasLocation = typeof locationLatitude === 'number' && Number.isFinite(locationLatitude) && typeof locationLongitude === 'number' && Number.isFinite(locationLongitude);
+      if (hasLocation) {
+        const latitudeRadians = locationLatitude * Math.PI / 180;
+        const longitudeRadians = locationLongitude * Math.PI / 180 + tick * 0.25;
+        const markerX = Math.cos(latitudeRadians) * Math.sin(longitudeRadians);
+        const markerY = Math.sin(latitudeRadians);
+        const markerZ = Math.cos(latitudeRadians) * Math.cos(longitudeRadians);
+        if (markerZ >= 0) {
+          const pointX = gcx + markerX * grad;
+          const pointY = gcy - markerY * grad;
+          globeCtx.strokeStyle = '#e2e8f0';
+          globeCtx.lineWidth = 1;
+          globeCtx.beginPath();
+          globeCtx.moveTo(pointX, pointY);
+          globeCtx.lineTo(pointX + 42, pointY - 18);
+          globeCtx.stroke();
+          globeCtx.fillStyle = '#ff7b00';
+          globeCtx.beginPath();
+          globeCtx.arc(pointX, pointY, 3, 0, Math.PI * 2);
+          globeCtx.fill();
+          globeCtx.fillStyle = '#00e5ff';
+          globeCtx.font = '10px "Share Tech Mono", monospace';
+          globeCtx.fillText(String(state.location.city || 'LOCATION').slice(0, 9), pointX + 5, pointY - 8);
+        }
+      } else {
+        globeCtx.fillStyle = '#64748b';
+        globeCtx.font = '9px "Share Tech Mono", monospace';
+        globeCtx.fillText('LOCATION NOT SET', gcx - 36, gcy + grad + 16);
+      }
     }
 
     let lastMasterFrame = 0;
@@ -1453,11 +1467,21 @@
       const humidity = document.getElementById('env-humidity');
       const condition = document.getElementById('env-condition');
       const hasCoordinates = typeof lat === 'number' && Number.isFinite(lat) && typeof lon === 'number' && Number.isFinite(lon);
+      const setForecast = (index, label, temperature, summary) => {
+        const labelEl = document.getElementById('env-forecast-day-' + index + '-label');
+        const temperatureEl = document.getElementById('env-forecast-day-' + index + '-temp');
+        const summaryEl = document.getElementById('env-forecast-day-' + index + '-condition');
+        if (labelEl) labelEl.textContent = label;
+        if (temperatureEl) temperatureEl.textContent = temperature;
+        if (summaryEl) summaryEl.textContent = summary;
+      };
       if (!hasCoordinates) {
         if (temp) temp.textContent = 'NOT SET';
         if (wind) wind.textContent = 'NOT SET';
         if (humidity) humidity.textContent = 'NOT SET';
         if (condition) condition.textContent = 'NOT SET';
+        setForecast(1, 'NEXT DAY', 'NOT SET', 'NOT SET');
+        setForecast(2, 'DAY AFTER', 'NOT SET', 'NOT SET');
         return 'Weather is not loaded. Choose a city or request location access.';
       }
       try {
@@ -1465,6 +1489,8 @@
         endpoint.searchParams.set('latitude', String(lat));
         endpoint.searchParams.set('longitude', String(lon));
         endpoint.searchParams.set('current', 'temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code');
+        endpoint.searchParams.set('daily', 'temperature_2m_max,temperature_2m_min,weather_code');
+        endpoint.searchParams.set('forecast_days', '3');
         endpoint.searchParams.set('wind_speed_unit', 'kmh');
         endpoint.searchParams.set('timezone', 'auto');
         const response = await fetch(endpoint.toString(), { cache: 'no-store' });
@@ -1482,19 +1508,37 @@
           95: 'Thunderstorm', 96: 'Thunderstorm with hail', 99: 'Severe thunderstorm with hail'
         };
         const tempText = Math.round(current.temperature_2m) + '°C';
-        const windText = Number.isFinite(Number(current.wind_speed_10m)) ? Number(current.wind_speed_10m).toFixed(1) + ' km/h' : 'NOT REPORTED';
-        const humidityText = current.relative_humidity_2m !== null && Number.isFinite(Number(current.relative_humidity_2m)) ? Math.round(Number(current.relative_humidity_2m)) + '%' : 'NOT REPORTED';
-        const conditionText = Number.isFinite(Number(current.weather_code)) ? (weatherCodes[current.weather_code] || 'CONDITION NOT MAPPED') : 'NOT REPORTED';
+        const windText = current.wind_speed_10m !== null && current.wind_speed_10m !== undefined && Number.isFinite(Number(current.wind_speed_10m)) ? Number(current.wind_speed_10m).toFixed(1) + ' km/h' : 'NOT REPORTED';
+        const humidityText = current.relative_humidity_2m !== null && current.relative_humidity_2m !== undefined && Number.isFinite(Number(current.relative_humidity_2m)) ? Math.round(Number(current.relative_humidity_2m)) + '%' : 'NOT REPORTED';
+        const conditionText = current.weather_code !== null && current.weather_code !== undefined && Number.isFinite(Number(current.weather_code)) ? (weatherCodes[Number(current.weather_code)] || 'CONDITION NOT MAPPED') : 'NOT REPORTED';
         if (temp) temp.textContent = tempText;
         if (wind) wind.textContent = windText;
         if (humidity) humidity.textContent = humidityText;
         if (condition) condition.textContent = conditionText;
+        const daily = data?.daily;
+        for (let day = 1; day <= 2; day += 1) {
+          const dateValue = daily?.time?.[day];
+          const maximum = daily?.temperature_2m_max?.[day];
+          const minimum = daily?.temperature_2m_min?.[day];
+          const code = daily?.weather_code?.[day];
+          if (typeof dateValue === 'string' && maximum !== null && maximum !== undefined && minimum !== null && minimum !== undefined && Number.isFinite(Number(maximum)) && Number.isFinite(Number(minimum))) {
+            const date = new Date(dateValue + 'T12:00:00');
+            const dayLabel = Number.isNaN(date.getTime()) ? (day === 1 ? 'NEXT DAY' : 'DAY AFTER') : date.toLocaleDateString(undefined, { weekday: 'long' }).toUpperCase();
+            const forecastText = Math.round(Number(maximum)) + '° / ' + Math.round(Number(minimum)) + '°';
+            const forecastCondition = code !== null && code !== undefined && Number.isFinite(Number(code)) ? (weatherCodes[Number(code)] || 'CONDITION NOT MAPPED') : 'NOT REPORTED';
+            setForecast(day, dayLabel, forecastText, forecastCondition);
+          } else {
+            setForecast(day, day === 1 ? 'NEXT DAY' : 'DAY AFTER', 'NOT REPORTED', 'NOT REPORTED');
+          }
+        }
         return city + ' weather: ' + tempText + ', humidity ' + humidityText + ', wind ' + windText + ', ' + conditionText + '. Source: Open-Meteo.';
       } catch (error) {
         if (temp) temp.textContent = 'UNAVAILABLE';
         if (wind) wind.textContent = 'UNAVAILABLE';
         if (humidity) humidity.textContent = 'UNAVAILABLE';
         if (condition) condition.textContent = 'UNAVAILABLE';
+        setForecast(1, 'NEXT DAY', 'UNAVAILABLE', 'UNAVAILABLE');
+        setForecast(2, 'DAY AFTER', 'UNAVAILABLE', 'UNAVAILABLE');
         return 'Weather data is unavailable for ' + city + '. ' + (error?.message || 'Check your connection.');
       }
     }
