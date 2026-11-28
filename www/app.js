@@ -280,8 +280,7 @@
     const radCtx = radarCanvas.getContext('2d');
     const globeCanvas = document.getElementById('globeCanvas');
     const globeCtx = globeCanvas.getContext('2d');
-    const netSparkCanvas = document.getElementById('netSparkCanvas');
-    const netCtx = netSparkCanvas.getContext('2d');
+    // Network throughput visualization was removed because this browser session has no real telemetry source.
 
     let tick = 0;
     let reactorSurge = 1.0;
