@@ -37,6 +37,8 @@ jobs:
       - name: Validate JavaScript assets and HTML IDs
         run: |
           node --check www/app.js
+          node --check www/network-diagnostics.js
+          node --test tests/network-diagnostics.test.cjs
           node <<'NODE'
           const fs = require('node:fs');
           const html = fs.readFileSync('www/index.html', 'utf8');
