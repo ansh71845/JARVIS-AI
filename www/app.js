@@ -2272,8 +2272,8 @@
             <span class="text-cyan-200">${escapeHTML(m.action)}</span>
           </div>
           <div class="flex items-center space-x-2">
-            <button data-run-macro="${m.id}" class="px-2 py-0.5 bg-cyan-950 border border-cyan-500/40 text-cyan-300 hover:border-amber-400 text-[10px]">RUN</button>
-            <button data-del-macro="${m.id}" class="text-rose-400 hover:text-rose-300 text-[10px]">[DEL]</button>
+            <button type="button" data-run-macro="${escapeHTML(Number(m.id) || 0)}" class="px-2 py-0.5 bg-cyan-950 border border-cyan-500/40 text-cyan-300 hover:border-amber-400 text-[10px]">RUN</button>
+            <button type="button" data-del-macro="${escapeHTML(Number(m.id) || 0)}" class="text-rose-400 hover:text-rose-300 text-[10px]">[DEL]</button>
           </div>
         </div>
       `).join('');
@@ -2281,7 +2281,7 @@
       document.querySelectorAll('[data-run-macro]').forEach(btn => {
         btn.addEventListener('click', () => {
           const id = Number(btn.getAttribute('data-run-macro'));
-          const macro = state.connectedApps.macros.find(x => x.id === id);
+          const macro = state.connectedApps.macros.find(x => Number(x.id) === id);
           if (macro) {
             appHubModal.classList.add('hidden');
             appHubModal.classList.remove('flex');
@@ -2293,7 +2293,7 @@
       document.querySelectorAll('[data-del-macro]').forEach(btn => {
         btn.addEventListener('click', () => {
           const id = Number(btn.getAttribute('data-del-macro'));
-          state.connectedApps.macros = state.connectedApps.macros.filter(x => x.id !== id);
+          state.connectedApps.macros = state.connectedApps.macros.filter(x => Number(x.id) !== id);
           playHudSound('chirp');
           saveAppsState();
           renderCustomMacros();
@@ -3534,14 +3534,14 @@
             <div class="text-cyan-100">${escapeHTML(m.text)}</div>
             <div class="text-[9px] text-slate-500">LOGGED: ${escapeHTML(m.time || 'TIME NOT SET')}</div>
           </div>
-          <button type="button" data-del-mem="${m.id}" class="text-rose-400 hover:text-rose-300 text-[10px] shrink-0">[FORGET]</button>
+          <button type="button" data-del-mem="${escapeHTML(Number(m.id) || 0)}" class="text-rose-400 hover:text-rose-300 text-[10px] shrink-0">[FORGET]</button>
         </div>
       `).join('');
 
       document.querySelectorAll('[data-del-mem]').forEach(btn => {
         btn.addEventListener('click', () => {
           const id = Number(btn.getAttribute('data-del-mem'));
-          state.connectedApps.memories = state.connectedApps.memories.filter(x => x.id !== id);
+          state.connectedApps.memories = state.connectedApps.memories.filter(x => Number(x.id) !== id);
           playHudSound('chirp');
           saveAppsState();
           renderNeuralMemories();
@@ -5816,7 +5816,7 @@
         <div class="p-2 bg-black/80 border ${job.enabled ? 'border-emerald-500/40' : 'border-slate-800'} rounded flex items-center justify-between gap-2">
           <div class="truncate">
             <div class="text-[11px] font-bold ${job.enabled ? 'text-white' : 'text-slate-500'} truncate">${escapeHTML(job.name)}</div>
-            <div class="text-[9px] text-amber-400">CRON: <code>${escapeHTML(job.schedule)}</code></div>
+            <div class="text-[9px] text-amber-400">MANUAL RUN ONLY - NO BACKGROUND SCHEDULE</div>
           </div>
           <div class="flex items-center space-x-1.5 shrink-0">
             <button type="button" data-runcron="${escapeHTML(Number(job.id) || 0)}" class="px-1.5 py-0.5 bg-cyan-950 border border-cyan-500/40 text-cyan-300 hover:bg-cyan-400 hover:text-black text-[9px] rounded">RUN</button>
@@ -5867,7 +5867,7 @@
         });
         input.value = '';
         renderOpenClawCronList();
-        speakText(`Saved local workflow shortcut: ${name}`);
+        speakText(`Saved local workflow shortcut: ${name}. It runs only when you tap RUN.`);
       });
     }
 
