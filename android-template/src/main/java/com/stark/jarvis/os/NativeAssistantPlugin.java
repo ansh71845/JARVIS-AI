@@ -97,7 +97,12 @@ public class NativeAssistantPlugin extends Plugin {
                 String browserTarget = webUrl != null && !webUrl.trim().isEmpty()
                     ? webUrl.trim()
                     : target;
-                Intent webIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(browserTarget));
+                Uri browserUri = Uri.parse(browserTarget);
+                if (!"https".equalsIgnoreCase(browserUri.getScheme())) {
+                    call.reject("Only HTTPS web destinations are allowed.");
+                    return;
+                }
+                Intent webIntent = new Intent(Intent.ACTION_VIEW, browserUri);
                 webIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 getActivity().startActivity(webIntent);
                 JSObject result = new JSObject();
