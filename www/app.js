@@ -3190,7 +3190,7 @@
           if (waChat) {
             const msgDiv = document.createElement('div');
             msgDiv.className = 'p-1.5 bg-cyan-950/60 border-l-2 border-cyan-400 text-cyan-100';
-            msgDiv.innerHTML = `<strong class="text-cyan-300">Commander (Now):</strong> ${optionalQuery}`;
+            msgDiv.innerHTML = `<strong class="text-cyan-300">Commander (Now):</strong> ${escapeHTML(optionalQuery)}`;
             waChat.appendChild(msgDiv);
             waChat.scrollTop = waChat.scrollHeight;
           }
@@ -4632,7 +4632,7 @@
             const summary = `Document Scan Complete for ${escapeHTML(file.name)} (${kb} KB). Extracted ${lines.length} non-empty lines and ${wordCount} words. Top content preview: ${escapeHTML(previewSnippet)}`;
             lastScanSummaryText = summary;
             if (scanOutBox) {
-              scanOutBox.innerHTML = `<strong class="text-amber-300">DOCUMENT ANALYSIS // ${file.name.toUpperCase()}:</strong><br>Lines: ${lines.length} | Words: ${wordCount} | Size: ${kb} KB<br><span class="text-cyan-200 mt-1 block">Preview: "${escapeHTML(previewSnippet)}..."</span>`;
+              scanOutBox.innerHTML = `<strong class="text-amber-300">DOCUMENT ANALYSIS // ${escapeHTML(file.name.toUpperCase())}:</strong><br>Lines: ${lines.length} | Words: ${wordCount} | Size: ${kb} KB<br><span class="text-cyan-200 mt-1 block">Preview: "${escapeHTML(previewSnippet)}..."</span>`;
             }
             if (scanBadge) scanBadge.textContent = 'DOC ANALYZED ';
             appendMessage('J.A.R.V.I.S.', summary, { source: 'AI DOCUMENT SCANNER' });
@@ -5686,7 +5686,7 @@
         const pct = Math.max(0, Math.min(100, Math.round((t.remainingSec / t.totalSec) * 100)));
         return `
           <div class="p-1.5 bg-slate-950/95 border border-amber-400/50 rounded flex items-center justify-between gap-2 text-[10px] font-mono-hud">
-            <span class="text-amber-300 font-bold truncate"> ${t.label}</span>
+            <span class="text-amber-300 font-bold truncate"> ${escapeHTML(t.label)}</span>
             <div class="flex-1 max-w-[140px] bg-slate-900 h-1.5 border border-cyan-500/30 rounded overflow-hidden">
               <div class="bg-emerald-400 h-full transition-all" style="width:${pct}%"></div>
             </div>
