@@ -36,37 +36,18 @@ jobs:
           cp android-template/src/main/java/com/stark/jarvis/os/*.java android/app/src/main/java/com/stark/jarvis/os/
       - name: Validate JavaScript assets and HTML IDs
         run: |
+          node --check www/app.js
           node <<'NODE'
           const fs = require('node:fs');
-          const os = require('node:os');
-          const path = require('node:path');
-          const { spawnSync } = require('node:child_process');
           const html = fs.readFileSync('www/index.html', 'utf8');
-          const jsFiles = ['www/app.js'].filter(file => fs.existsSync(file));
-          if (jsFiles.length === 0) throw new Error('No application JavaScript asset found.');
-          const scripts = [...html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script>/gi)]
-            .filter(([, attrs, body]) => !/\\bsrc\\s*=/.test(attrs) && body.trim());
-          const filesToCheck = [...jsFiles];
-          for (let i = 0; i < scripts.length; i++) {
-            const file = path.join(os.tmpdir(), `jarvis-inline-${i}.js`);
-            fs.writeFileSync(file, scripts[i][2]);
-            filesToCheck.push(file);
-          }
-          for (const file of filesToCheck) {
-            const check = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8' });
-            if (check.status !== 0) {
-              process.stderr.write(check.stderr || check.stdout);
-              process.exit(check.status || 1);
-            }
-          }
-          const ids = [...html.matchAll(/\\bid=["']([^"']+)["']/g)]
+          const ids = [...html.matchAll(/id=["']([^"']+)["']/g)]
             .map(([, id]) => id)
-            .filter(id => !/[\\$\\{]/.test(id));
+            .filter(id => !id.includes('$') && !id.includes('{'));
           const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
           if (duplicates.length) {
             throw new Error('Duplicate static HTML IDs: ' + [...new Set(duplicates)].join(', '));
           }
-          console.log(`Validated ${filesToCheck.length} JavaScript files and ${ids.length} static IDs.`);
+          console.log('Validated www/app.js and ' + ids.length + ' static HTML IDs.');
           NODE
       - name: Sync Capacitor project
         run: npx cap sync android
