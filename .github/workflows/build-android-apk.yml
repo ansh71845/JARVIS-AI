@@ -47,7 +47,14 @@ jobs:
           if (duplicates.length) {
             throw new Error('Duplicate static HTML IDs: ' + [...new Set(duplicates)].join(', '));
           }
-          console.log('Validated www/app.js and ' + ids.length + ' static HTML IDs.');
+          const app = fs.readFileSync('www/app.js', 'utf8');
+          const canvasIds = [...app.matchAll(/const\\s+\\w+\\s*=\\s*document\\.getElementById\\(['"]([^'"]+)['"]\\);\\s*\\n\\s*const\\s+\\w+\\s*=\\s*\\w+\\.getContext\\(['"]2d['"]\\);/g)]
+            .map(([, id]) => id);
+          const missingCanvases = canvasIds.filter(id => !ids.includes(id));
+          if (missingCanvases.length) {
+            throw new Error('Canvas initializers reference missing HTML IDs: ' + [...new Set(missingCanvases)].join(', '));
+          }
+          console.log('Validated www/app.js, ' + ids.length + ' static HTML IDs, and ' + canvasIds.length + ' canvas initializers.');
           NODE
       - name: Sync Capacitor project
         run: npx cap sync android
