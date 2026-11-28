@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const diagnostics = require('../network-diagnostics.js');
+const diagnostics = require('../www/network-diagnostics.js');
 
 test('validates IPv4 and IPv6 and rejects malformed values', () => {
   assert.equal(diagnostics.isValidIpAddress('203.0.113.8'), true);
