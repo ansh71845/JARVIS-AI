@@ -4129,36 +4129,32 @@
       showToast(msg);
     }
 
-    function getAndroidPackageName(appName) {
-      const name = String(appName || '').toLowerCase();
-      if (name.includes('whatsapp')) return 'com.whatsapp';
-      if (name.includes('youtube')) return 'com.google.android.youtube';
-      if (name.includes('instagram')) return 'com.instagram.android';
-      if (name.includes('chrome')) return 'com.android.chrome';
-      if (name.includes('spotify')) return 'com.spotify.music';
-      return null;
-    }
+    function launchOnAndroid(appName, webUrl, nativeUri) {
+      const nativeAssistant = window.Capacitor?.Plugins?.NativeAssistant;
+      if (!nativeAssistant?.openExternalApp) {
+        setOmniFeedback('Native Android app handoff is unavailable in this browser/session.');
+        return;
+      }
 
-    function buildAndroidIntentUri(appName, webUrl, nativeUri) {
-      const lower = appName.toLowerCase();
-      const cleanPath = webUrl.replace(/^https?:\/\//i, '');
-      if (lower.includes('youtube')) {
-        return `intent://${cleanPath}#Intent;scheme=https;package=com.google.android.youtube;S.browser_fallback_url=${encodeURIComponent(webUrl)};end`;
-      }
-      if (lower.includes('whatsapp')) {
-        if (!nativeUri || nativeUri === 'whatsapp://') {
-          return 'intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=com.whatsapp;end';
-        }
-        const pathPart = nativeUri.replace(/^whatsapp:\/\//i, '');
-        return `intent://${pathPart}#Intent;scheme=whatsapp;package=com.whatsapp;S.browser_fallback_url=${encodeURIComponent(webUrl)};end`;
-      }
-      if (lower.includes('instagram')) {
-        return `intent://instagram.com/#Intent;scheme=https;package=com.instagram.android;S.browser_fallback_url=${encodeURIComponent(webUrl)};end`;
-      }
-      if (lower.includes('chrome') || lower.includes('google')) {
-        return `intent://${cleanPath}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(webUrl)};end`;
-      }
-      return nativeUri || webUrl;
+      nativeAssistant.openExternalApp({ appName, webUrl, nativeUri: nativeUri || webUrl })
+        .then(result => {
+          const status = result?.status;
+          if (status === 'LAUNCHED_NATIVE') {
+            setOmniFeedback(appName + ' opened in its installed app.');
+          } else if (status === 'STORE_OPENED') {
+            setOmniFeedback(appName + ' was not installed. Play Store search opened.');
+          } else if (status === 'STORE_SEARCH_WEB_OPENED') {
+            setOmniFeedback(appName + ' was not installed. Play Store search opened in the browser.');
+          } else if (status === 'LINK_OPENED') {
+            setOmniFeedback(appName + ' was opened using Android’s default link handler.');
+          } else {
+            setOmniFeedback(appName + ' launch completed: ' + String(status || 'status unavailable'));
+          }
+        })
+        .catch(error => {
+          console.error('Android app handoff failed:', error);
+          setOmniFeedback(appName + ' could not be opened: ' + (error?.message || 'unknown Android error'));
+        });
     }
 
     function dispatchRealExternalApp(appName, webUrl, nativeUri, description, sharePayloadText = '') {
@@ -4169,16 +4165,12 @@
       lastDispatchedText = sharePayloadText || description;
       lastDispatchedTitle = `J.A.R.V.I.S. // ${appName}`;
 
-      // Close hub modal if open
       if (appHubModal) {
         appHubModal.classList.add('hidden');
         appHubModal.classList.remove('flex');
       }
 
       const isAndroid = /Android/i.test(navigator.userAgent);
-      const intentUri = isAndroid ? buildAndroidIntentUri(appName, webUrl, nativeUri) : (nativeUri || webUrl);
-
-      // 1. Update the clean External Launch Bar at the top of the screen with a real external `<a target="_blank">` link
       const banner = document.getElementById('external-launch-banner');
       const titleEl = document.getElementById('ext-banner-title');
       const descEl = document.getElementById('ext-banner-desc');
@@ -4187,48 +4179,22 @@
 
       if (banner && titleEl && descEl && linkEl) {
         titleEl.textContent = ` EXTERNAL ${appName.toUpperCase()} READY`;
-        descEl.textContent = `${description}`;
+        descEl.textContent = description;
         linkEl.href = isAndroid ? '#launch-native-app' : webUrl;
-        linkEl.onclick = (event) => {
+        linkEl.onclick = event => {
           if (isAndroid) {
             event.preventDefault();
-            const nativeAssistant = window.Capacitor?.Plugins?.NativeAssistant;
-            const packageName = getAndroidPackageName(appName);
-            if (nativeAssistant?.launchApp && packageName) {
-              nativeAssistant.launchApp({ packageName }).then(() => {
-                setOmniFeedback(appName + ' launch request sent to Android.');
-              }).catch((err) => {
-                console.error('Native app launch failed:', err);
-                setOmniFeedback(appName + ' could not be opened. Check that it is installed.');
-              });
-            } else {
-              setOmniFeedback('Native Android launcher is unavailable. Install the latest J.A.R.V.I.S. APK.');
-            }
+            launchOnAndroid(appName, webUrl, nativeUri);
           }
         };
         linkEl.textContent = `OPEN ${appName.toUpperCase()} ↗`;
-        if (nativeEl) {
-          nativeEl.href = intentUri;
-        }
+        if (nativeEl) nativeEl.href = nativeUri || webUrl;
         banner.classList.remove('hidden');
         banner.classList.add('flex');
       }
 
-      // Launch through Android PackageManager in the Capacitor APK.
-      // Do not send Android users to Chrome when a native launch fails.
       if (isAndroid) {
-        const nativeAssistant = window.Capacitor?.Plugins?.NativeAssistant;
-        const packageName = getAndroidPackageName(appName);
-        if (nativeAssistant?.launchApp && packageName) {
-          nativeAssistant.launchApp({ packageName }).then(() => {
-            setOmniFeedback(appName + ' launch request sent to Android.');
-          }).catch((err) => {
-            console.error('Native app launch failed:', err);
-            setOmniFeedback(appName + ' could not be opened. Check that it is installed.');
-          });
-        } else {
-          setOmniFeedback('Native Android launcher is unavailable. Install the latest J.A.R.V.I.S. APK.');
-        }
+        launchOnAndroid(appName, webUrl, nativeUri);
       } else {
         window.open(webUrl, '_blank', 'noopener,noreferrer');
       }
